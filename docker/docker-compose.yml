@@ -1,0 +1,27 @@
+# PlasmaBENCH TimSim runtime.
+#
+# Inputs (blanks, plasma .d, fastas) live under ${PLB_DATA} → /data.
+# Outputs (TimSim runs) live under ${PLB_OUT} → /sim.
+# Defaults assume a fresh clone with files under data/raw/{dia/blanks,dia/plasma,fasta}.
+# Override per-machine via docker/.env (see docker/.env.example).
+
+services:
+  timsim:
+    image: ghcr.io/thegreatherrlebert/plasmabench-timsim:from-findings
+    pull_policy: always
+    # GPU access — comment out the deploy block on a CPU-only host.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    working_dir: /work
+    volumes:
+      - ..:/work
+      - ${PLB_DATA:-../data}:/data
+      - ${PLB_OUT:-../simulations}:/sim
+    entrypoint: ["/bin/bash"]
+    stdin_open: true
+    tty: true

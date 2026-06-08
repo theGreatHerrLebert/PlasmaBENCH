@@ -1,0 +1,16 @@
+# Dev / tooling requirements for PlasmaBENCH.
+#
+# Lightweight set for repo housekeeping (seed building, manifest validation,
+# analysis notebooks, plotting). Does NOT include timsim — the simulator runs
+# inside the rustims Docker image (see Makefile / docker/docker-compose.yml)
+# or a from-source venv (docs/venv-setup.md).
+PyYAML>=6.0
+pandas>=2.0
+numpy>=1.24
+pyarrow>=14.0          # read DIA-NN report.parquet
+matplotlib>=3.7
+matplotlib-venn>=1.1
+jupyter>=1.0
+# sagepy ships the UniMod mass→tag mapping used by the FragPipe peptide
+# translator in plasmabench/peptides.py (only `mass_to_mod` is imported).
+sagepy>=0.4.5

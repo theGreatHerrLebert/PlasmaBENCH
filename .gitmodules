@@ -1,0 +1,7 @@
+[submodule "evident"]
+	path = evident
+	url = https://github.com/theGreatHerrLebert/evident.git
+[submodule "rustims"]
+	path = rustims
+	url = https://github.com/theGreatHerrLebert/rustims.git
+	branch = feature/simulate-from-findings

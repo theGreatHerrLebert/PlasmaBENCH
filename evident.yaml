@@ -1,0 +1,40 @@
+version: 0.1
+# PlasmaBENCH EVIDENT manifest
+#
+# Compliance: this manifest follows the schema in
+#   evident/workflow/validate_manifest.py
+# Validate with:
+#   python evident/workflow/validate_manifest.py evident.yaml
+claims:
+  - id: plasmabench-stage1-simulated-truth
+    title: Stage 1 DIA software comparison is validated against TimSim synthetic truth
+    case: cases/plasmabench-stage1.md
+    source: cases/plasmabench-stage1
+    tier: research
+    trust_strategy:
+      - validation
+    pattern: evident/patterns/README.md#simulation-based-validation
+    claim: >
+      Search-engine performance metrics reported for stage 1 — species-resolved
+      peptide/precursor recall, species-resolved true FDR, and quantification
+      (B/A ratio-recovery) accuracy — are scored against TimSim blueprints
+      emitted alongside the simulated PYE1 Sample A and Sample B DIA runs, with
+      per-metric tolerances declared before each release of the comparison.
+    evidence:
+      oracle:
+        - TimSim peptide blueprint (per sample)
+        - TimSim precursor blueprint (per sample)
+        - Known PYE1 spike-in ratios (B/A — human 1.0, yeast 3.0, E. coli 0.5)
+      tolerance: Per metric — see analysis/stage1/tolerances.toml at release time.
+      command: make stage1-eval
+      artifact: results/stage1/metrics.json
+    assumptions:
+      - TimSim reproduces the TimsTOF DIA-PASEF behaviour relevant to the scored metrics; plasma matrix effects beyond the injected noise are out of scope for stage 1.
+      - The Sample A / Sample B reports used to seed the simulation are representative enough that differential search-engine behaviour is visible.
+      - Organism assignment from the protein/accession (HUMAN / YEAST / ECOLI) is unambiguous for the scored peptides; shared/ambiguous peptides are excluded from the ratio oracle.
+    failure_modes:
+      - Seed-engine circularity — seeding from one engine's report and then scoring that same engine inflates its apparent recall. Report each engine against the union blueprint, and read cross-engine differences, not absolute self-recall.
+      - Simulator overfit — pipelines tuned against synthetic data may improve stage 1 metrics without improving real-data behaviour. Stage 2 (SIM-on-real-plasma) and the experimental runs must be inspected before release-grade claims.
+      - Validation theater — sweeps without a pre-declared decision rule produce volume but not signal.
+      - Convention gaps between tools (FDR, mass tolerance, modifications) misattribute disagreement to method rather than configuration. Document untunable parameters in configs/<tool>/NOTES.md.
+      - Ratio leakage — a peptide whose organism is misassigned pollutes two species' ratio distributions at once; the species map must be audited before scoring.

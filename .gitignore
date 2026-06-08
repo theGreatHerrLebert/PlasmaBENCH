@@ -1,0 +1,22 @@
+# Raw + intermediate data — never committed (link via fileshare/DVC instead).
+/data/raw/**
+!/data/raw/**/.gitkeep
+/data/**/*.d/
+/simulations/**/seeds/
+/simulations/**/dia/
+/simulations/**/dda/
+/simulations/**/*.d/
+/results/**
+!/results/**/.gitkeep
+!/simulations/**/results/.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Local env / tooling
+docker/.env
+.DS_Store
+.ipynb_checkpoints/

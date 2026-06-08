@@ -1,0 +1,13 @@
+# Modifications for stage 1. Format follows SAGE: each modified amino-acid
+# variant is its own key; "[" denotes the peptide N-terminus.
+#
+# Under from_findings the modifications already present in the seed sequences
+# (translated from the reports) are simulated as-is; this block governs any
+# additional variable mods TimSim may introduce. Keep it aligned with the
+# search-engine settings Ute used so the truth set matches what tools expect.
+[variable_modifications]
+M = ["[UNIMOD:35]"]   # Oxidation of methionine
+"[" = ["[UNIMOD:1]"]  # Acetylation of the peptide N-terminus
+
+[static_modifications]
+C = "[UNIMOD:4]"      # Carbamidomethylation of cysteine (plasma samples are alkylated)
