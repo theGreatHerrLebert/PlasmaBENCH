@@ -21,13 +21,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .ratios import (SPECIES_ORDER, SPECIES_LABEL, SPECIES_COLOR,
-                     RatioConvention, A_OVER_B, EXPECTED_LOG2_BA)
+from .ratios import (SPECIES_ORDER, SPECIES_LABEL, SPECIES_COLOR, Q_COLUMNS,
+                     RatioConvention, A_OVER_B, EXPECTED_LOG2_BA, build_ratio_table)
+
+ABUND_COLUMNS = ["species", "x", "n_truth", "n_detected", "sensitivity",
+                 "median_ratio", "q25", "q75"]
 
 
 def _feature(df: pd.DataFrame, level: str) -> pd.Series:
+    """Feature key matching ratios.build_ratio_table exactly (so ratios join)."""
     if level in ("ion", "precursor"):
-        return df["sequence_modified"].astype(str) + "@" + df["charge"].astype(str)
+        return df["sequence_modified"].astype(str) + df["charge"].astype(str)
     if level == "modified_peptide":
         return df["sequence_modified"].astype(str)
     if level == "peptide":
@@ -35,41 +39,56 @@ def _feature(df: pd.DataFrame, level: str) -> pd.Series:
     raise ValueError(f"level must be ion|peptide|modified_peptide, got {level!r}")
 
 
+def _found_features(obs: pd.DataFrame, level: str, q_value_max: float) -> set:
+    """Features identified in ≥1 sample, using the SAME 4-level q filter as
+    build_ratio_table (null q-values permitted)."""
+    o = obs
+    if q_value_max is not None:
+        for qc in Q_COLUMNS:
+            if qc in o.columns:
+                o = o[o[qc].isna() | (o[qc] <= q_value_max)]
+    o = o[o["observed_intensity"] > 0]
+    return set(_feature(o, level))
+
+
 def build_true_abundance(truth: pd.DataFrame, obs: pd.DataFrame, level: str = "ion",
                          conv: RatioConvention = A_OVER_B, n_bins: int = 10,
                          q_value_max: float = 0.01) -> pd.DataFrame:
-    """Per (species, true-abundance decile): sensitivity + median ratio bias."""
-    t = truth[truth["transmitted"] & (truth["truth_scope"] != "background_unknown")
-              & truth["species"].isin(SPECIES_ORDER)].copy()
+    """Per (species, true-abundance decile): detection sensitivity + median ratio bias.
+
+    Sensitivity = P(identified in ≥1 sample | transmitted in ≥1 sample), over the
+    findable truth universe. The bias ratio is taken from build_ratio_table, so it
+    is identical to the P1 ratio panels (same filters, aggregation, human anchor).
+    """
+    for df_, nm in ((truth, "truth"), (obs, "observations")):
+        if df_["experiment"].nunique() > 1:
+            raise ValueError(f"{nm} spans >1 experiment; call build_true_abundance "
+                             "per experiment (feature keys are not experiment-scoped)")
+
+    # observed ratio per feature — reuse the P1 ratio table for exact consistency
+    wide, _ = build_ratio_table(obs, level=level, q_value_max=q_value_max, human_anchor=True)
+    ratio_by_feat = wide.set_index("feature")["log2_ba"]
+    found = _found_features(obs, level, q_value_max)
+
+    # truth universe: positive intensity in BOTH samples (for the MA midpoint),
+    # findable = transmitted in ≥1 sample (NOT both — that would drop weak features)
+    t = truth[(truth["truth_scope"] != "background_unknown")
+              & truth["species"].isin(SPECIES_ORDER) & (truth["truth_intensity"] > 0)].copy()
     t["feature"] = _feature(t, level)
     sp = t.groupby("feature")["species"].agg(lambda s: s.iloc[0] if s.nunique() == 1 else None)
-
-    # true abundance per feature: need it in BOTH samples for the MA midpoint
+    transmitted_any = t.groupby("feature")["transmitted"].any()
     ti = t.groupby(["feature", "sample"])["truth_intensity"].sum().unstack("sample")
     ti = ti.dropna(subset=["A", "B"])
-    ti = ti[(ti["A"] > 0) & (ti["B"] > 0)]          # both samples positive for the MA midpoint
+    ti = ti[(ti["A"] > 0) & (ti["B"] > 0)]
+
     feat = pd.DataFrame(index=ti.index)
     feat["true_log2_int"] = 0.5 * np.log2(ti["A"] * ti["B"])
     feat["species"] = feat.index.map(sp)
+    feat["eligible"] = feat.index.map(transmitted_any).fillna(False)
     feat = feat.dropna(subset=["species"])
-
-    # observations: q-filtered, per feature per sample
-    o = obs.copy()
-    if q_value_max is not None and "q_value" in o.columns:
-        o = o[o["q_value"].fillna(1.0) <= q_value_max]
-    o["feature"] = _feature(o, level)
-    detected_any = set(o["feature"])
-    ow = o.groupby(["feature", "sample"])["observed_intensity"].sum().unstack("sample")
-    ow_both = ow.dropna(subset=["A", "B"]).copy()
-    ow_both = ow_both[(ow_both["A"] > 0) & (ow_both["B"] > 0)]
-    ow_both["log2_ba"] = np.log2(ow_both["B"] / ow_both["A"])
-    # human-anchor the observed ratio (consistent with the ratio panels)
-    h = ow_both["log2_ba"].reindex([f for f in feat.index[feat["species"] == "HUMAN"]
-                                    if f in ow_both.index])
-    anchor = float(h.median()) if len(h) else 0.0
-
-    feat["detected"] = feat.index.isin(detected_any)
-    feat["ratio"] = (ow_both["log2_ba"] - anchor).reindex(feat.index)
+    feat = feat[feat["eligible"]]                 # findable universe = the sensitivity denominator
+    feat["detected"] = feat.index.isin(found)
+    feat["ratio"] = ratio_by_feat.reindex(feat.index)   # anchored canonical log2(B/A); NaN if not quantified in both
 
     rows = []
     for s in SPECIES_ORDER:
@@ -87,7 +106,7 @@ def build_true_abundance(truth: pd.DataFrame, obs: pd.DataFrame, level: str = "i
                 "q25": float(ratios.quantile(0.25)) if len(ratios) else np.nan,
                 "q75": float(ratios.quantile(0.75)) if len(ratios) else np.nan,
             })
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=ABUND_COLUMNS)
 
 
 def plot_true_abundance(tables: dict, out: Path, conv: RatioConvention = A_OVER_B,

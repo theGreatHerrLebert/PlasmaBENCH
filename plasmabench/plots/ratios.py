@@ -239,7 +239,7 @@ def bias_by_abundance(wide: pd.DataFrame, conv: RatioConvention = A_OVER_B,
                          "median": float(disp.median()),
                          "q25": float(disp.quantile(0.25)), "q75": float(disp.quantile(0.75)),
                          "n": int(len(g))})
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=["species", "x", "median", "q25", "q75", "n"])
 
 
 def plot_ratio_bias(wides: dict, out: Path, conv: RatioConvention = A_OVER_B,

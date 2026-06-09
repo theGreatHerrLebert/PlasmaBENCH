@@ -348,6 +348,56 @@ def test_fdr_blank_subtraction() -> None:
     check(row["TP"] == 1 and row["blank_subtracted"] == 1, "TP unchanged, 1 blank ID subtracted")
 
 
+def _abund_frames(experiments=("E",)):
+    """Matched truth/obs ion-level frames; ECOLI 'EEEEEEK' is transmitted only in A."""
+    trows, orows = [], []
+    ec = ["AAAAAAK", "CCCCCCK", "DDDDDDK", "EEEEEEK"]
+    for exp in experiments:
+        for i, seq in enumerate(ec):
+            for samp, inten in (("A", 1000 * (i + 1)), ("B", 500 * (i + 1))):
+                tx = not (seq == "EEEEEEK" and samp == "B")  # E4 transmitted only in A
+                trows.append(dict(experiment=exp, sample=samp, sequence_modified=seq, charge=2,
+                                  sequence=seq, species="ECOLI", truth_scope="simulated",
+                                  transmitted=tx, truth_intensity=float(inten)))
+                orows.append(dict(experiment=exp, sample=samp, run_id=f"{exp}{samp}",
+                                  sequence_modified=seq, charge=2,
+                                  sequence=seq, species="ECOLI", truth_scope="simulated",
+                                  observed_intensity=float(inten), q_value=0.001,
+                                  protein_names="X_ECOLI", protein_group="X"))
+        for seq in ["HHHHHHK", "IIIIIIK"]:  # human, for the anchor
+            for samp in ("A", "B"):
+                trows.append(dict(experiment=exp, sample=samp, sequence_modified=seq, charge=2,
+                                  sequence=seq, species="HUMAN", truth_scope="simulated",
+                                  transmitted=True, truth_intensity=2000.0))
+                orows.append(dict(experiment=exp, sample=samp, run_id=f"{exp}{samp}",
+                                  sequence_modified=seq, charge=2,
+                                  sequence=seq, species="HUMAN", truth_scope="simulated",
+                                  observed_intensity=2000.0, q_value=0.001,
+                                  protein_names="H_HUMAN", protein_group="H"))
+    return pd.DataFrame(trows), pd.DataFrame(orows)
+
+
+def test_abundance_denominator_and_guard() -> None:
+    print("test_abundance_denominator_and_guard")
+    from plasmabench.plots.abundance import build_true_abundance
+    truth, obs = _abund_frames()
+    t = build_true_abundance(truth, obs, level="ion", n_bins=2)
+    ec = t[t["species"] == "ECOLI"]
+    check(int(ec["n_truth"].sum()) == 4,
+          "A-only-transmitted feature stays in the denominator (transmitted-in-≥1, not both)")
+    check((ec["sensitivity"] == 1.0).all(), "all eligible+detected ecoli → sensitivity 1.0")
+    # empty-but-schema'd: a species with no rows must not break downstream
+    from plasmabench.plots.abundance import ABUND_COLUMNS
+    check(list(t.columns) == ABUND_COLUMNS, "table has the declared columns even with 1 species")
+    # multi-experiment must be rejected (no cross-experiment feature credit)
+    t2, o2 = _abund_frames(("E1", "E2"))
+    try:
+        build_true_abundance(t2, o2, level="ion", n_bins=2)
+        raise SystemExit("FAIL: multi-experiment input not rejected")
+    except ValueError:
+        check(True, "multi-experiment input raises")
+
+
 def test_tokens_no_pipe_split() -> None:
     print("test_tokens_no_pipe_split")
     check(F._tokens("sp|P12345|ALBU_HUMAN") == ["sp|P12345|ALBU_HUMAN"],
@@ -360,6 +410,7 @@ def run_synthetic() -> None:
     test_obs_collapse_nullkey_and_dedup()
     test_fdr_experiment_scope_and_ambiguous_fp()
     test_fdr_blank_subtraction()
+    test_abundance_denominator_and_guard()
     test_render_key_collision_and_proteome_guard()
     test_tokens_no_pipe_split()
 
