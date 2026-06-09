@@ -220,7 +220,68 @@ def plot_ratio_panels(wide: pd.DataFrame, out: Path, conv: RatioConvention = A_O
     plt.close(fig)
 
 
+def bias_by_abundance(wide: pd.DataFrame, conv: RatioConvention = A_OVER_B,
+                      n_bins: int = 10) -> pd.DataFrame:
+    """Per-species, per-abundance-decile median ratio (display convention) + IQR.
+
+    Bins are equal-count quantiles of ``log2_int`` *within* each species (their
+    abundance ranges differ). Reveals abundance-dependent ratio bias.
+    """
+    rows = []
+    for sp in SPECIES_ORDER:
+        d = wide[wide["species"] == sp]
+        if len(d) < n_bins:
+            continue
+        abin = pd.qcut(d["log2_int"], n_bins, duplicates="drop")
+        for _, g in d.groupby(abin, observed=True):
+            disp = conv.to_display(g["log2_ba"])
+            rows.append({"species": sp, "x": float(g["log2_int"].median()),
+                         "median": float(disp.median()),
+                         "q25": float(disp.quantile(0.25)), "q75": float(disp.quantile(0.75)),
+                         "n": int(len(g))})
+    return pd.DataFrame(rows)
+
+
+def plot_ratio_bias(wides: dict, out: Path, conv: RatioConvention = A_OVER_B,
+                    level: str = "protein", n_bins: int = 10, y_halfspan: float = 1.0,
+                    title: str = "Ratio bias vs abundance") -> "pd.DataFrame":
+    """One panel per species: median ratio vs abundance decile, overlaying each
+    label in ``wides`` (e.g. {"1.8": wide18, "2.5": wide25}). Dashed = expected.
+    """
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+
+    mpl.rcParams.update({"axes.labelsize": 13, "xtick.labelsize": 11, "ytick.labelsize": 11})
+    palette = ["#B07AA1", "#4E79A7", "#59A14F", "#E15759"]
+    fig, axes = plt.subplots(1, len(SPECIES_ORDER), figsize=(5.2 * len(SPECIES_ORDER), 5.0), dpi=300)
+    tables = {lbl: bias_by_abundance(w, conv, n_bins) for lbl, w in wides.items()}
+
+    for ax, sp in zip(axes, SPECIES_ORDER):
+        exp = conv.to_display(EXPECTED_LOG2_BA[sp])
+        ax.axhline(exp, color="0.4", ls="--", lw=1.4, label=f"expected {exp:+.2f}")
+        for i, (lbl, tb) in enumerate(tables.items()):
+            d = tb[tb["species"] == sp]
+            if d.empty:
+                continue
+            c = palette[i % len(palette)]
+            ax.fill_between(d["x"], d["q25"], d["q75"], color=c, alpha=0.12, lw=0)
+            ax.plot(d["x"], d["median"], "-o", color=c, ms=4, lw=1.8, label=lbl)
+        ax.set_title(f"{SPECIES_LABEL[sp]}")
+        ax.set_xlabel("log2 mean abundance  ½·log2(A·B)")
+        ax.set_ylim(exp - y_halfspan, exp + y_halfspan)
+        ax.grid(axis="y", ls=":", alpha=0.4)
+        ax.legend(fontsize=10, loc="best")
+    axes[0].set_ylabel(conv.ylabel + " (median per decile)")
+    fig.suptitle(f"{title} — {level} level", fontsize=14, y=1.02)
+    fig.tight_layout()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    return pd.concat([t.assign(label=lbl) for lbl, t in tables.items()], ignore_index=True)
+
+
 __all__ = [
     "RatioConvention", "A_OVER_B", "B_OVER_A", "EXPECTED_LOG2_BA",
     "build_ratio_table", "ratio_summary", "plot_ratio_panels",
+    "bias_by_abundance", "plot_ratio_bias",
 ]

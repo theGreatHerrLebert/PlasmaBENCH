@@ -364,6 +364,31 @@ def run_synthetic() -> None:
     test_tokens_no_pipe_split()
 
 
+def test_abundance_curves(o: pd.DataFrame) -> None:
+    print("test_abundance_curves")
+    from plasmabench.plots.abundance import build_true_abundance
+    from plasmabench.plots import ratios as RR
+    truth = pd.concat([load_truth(RunSpec("stage1", "A", RUN_A, DB_A), manifest()),
+                       load_truth(RunSpec("stage1", "B", RUN_B, DB_B), manifest())],
+                      ignore_index=True)
+    t = build_true_abundance(truth, o, level="ion")
+    check(set(t["species"]) == {"HUMAN", "YEAST", "ECOLI"}, "true-abundance table has all species")
+    check(t["sensitivity"].between(0, 1).all(), "sensitivity in [0,1]")
+    # sensitivity rises with true abundance (LOD shape): high decile >> low decile for ecoli
+    ec = t[t["species"] == "ECOLI"].sort_values("x")
+    check(ec.iloc[-1]["sensitivity"] > ec.iloc[0]["sensitivity"] + 0.5,
+          "ecoli sensitivity increases strongly with true abundance (LOD curve)")
+    # bias near expected at the top decile
+    top = ec.iloc[-1]["median_ratio"]
+    check(abs(top - RR.EXPECTED_LOG2_BA["ECOLI"] * RR.A_OVER_B.sign) < 0.3,
+          f"ecoli high-abundance bias near expected ({top:+.2f})")
+    # engine-axis bias helper also builds
+    wide, _ = RR.build_ratio_table(o, level="ion")
+    b = RR.bias_by_abundance(wide, RR.A_OVER_B)
+    check(set(b["species"]) == {"HUMAN", "YEAST", "ECOLI"} and (b["n"] > 0).all(),
+          "bias_by_abundance builds per-species deciles")
+
+
 def main() -> int:
     run_synthetic()  # fixture-free, always run
     for f in (REPORT, DB_A, DB_B):
@@ -377,6 +402,7 @@ def main() -> int:
     test_quant_join_and_corr(t, o)
     test_ratio_convention_single_api()
     test_ratio_table_recovers_oracle(o)
+    test_abundance_curves(o)
     test_fdr_math()
     test_fdr_scoring(o)
     print(f"\nALL PASSED ({PASSED} checks)")
