@@ -42,18 +42,63 @@ def rewrite_paths(text: str, subs: dict[str, str]) -> str:
     return out
 
 
+def rewrite_value(value: str, subs: dict[str, str]) -> str:
+    """Apply container→host prefix subs to a single path value (host mode)."""
+    for src, dst in subs.items():
+        if value == src or value.startswith(src + "/"):
+            return dst + value[len(src):]
+    return value
+
+
+def _toml_key(line: str) -> str | None:
+    """The TOML key of a ``key = value`` line (ignoring a leading ``#``), else None.
+
+    Exact-key matching avoids prefix collisions — e.g. ``reference_path`` must not
+    also match ``reference_in_memory`` / ``reference_noise_intensity_max``.
+    """
+    s = line.strip()
+    if s.startswith("#"):
+        s = s[1:].strip()
+    if "=" not in s:
+        return None
+    return s.split("=", 1)[0].strip()
+
+
 def render(base_toml: str, *, sample: str, seed_csv: str, save_path: str,
-           experiment_name: str) -> str:
+           experiment_name: str, reference_path: str | None = None,
+           superimpose: bool = False, gradient_length: str | None = None) -> str:
+    """Fill the per-sample fields; optionally switch to the Stage-2 superimpose mode.
+
+    Stage-2 (overlay simulated spike-in onto a real plasma .d) flips three keys:
+    ``add_real_data_noise=false``, ``superimpose_on_reference=true`` (the two are
+    mutually exclusive), and repoints ``reference_path`` at the plasma run. The
+    simulated signal then sits on the *real* human background — so human carries no
+    blueprint truth (score with ``--human-scope background_unknown``).
+    """
     out = base_toml.replace("SAMPLE_PLACEHOLDER", sample)
     new_lines = []
     for line in out.splitlines():
-        stripped = line.lstrip()
-        if stripped.startswith("findings_path"):
+        key = _toml_key(line)
+        if key == "findings_path":
             new_lines.append(f'findings_path   = "{seed_csv}"')
-        elif stripped.startswith("save_path"):
+        elif key == "save_path":
             new_lines.append(f'save_path       = "{save_path}"')
-        elif stripped.startswith("experiment_name"):
+        elif key == "experiment_name":
             new_lines.append(f'experiment_name      = "{experiment_name}"')
+        elif reference_path is not None and key == "reference_path":
+            new_lines.append(f'reference_path  = "{reference_path}"')
+        elif gradient_length is not None and key == "gradient_length":
+            new_lines.append(f'gradient_length      = {gradient_length}'
+                             '          # matched to the reference plasma .d span')
+        elif superimpose and key == "add_real_data_noise":
+            new_lines.append('add_real_data_noise           = false'
+                             '   # stage 2: superimpose instead of sampling blank noise')
+        elif superimpose and key == "superimpose_on_reference":
+            new_lines.append('superimpose_on_reference      = true'
+                             '    # overlay simulated spike-in on the real plasma frames')
+        elif superimpose and key == "proteome_mix":
+            # enforce the invariant: ratios stay baked in the seed, never re-diluted
+            new_lines.append('proteome_mix = false')
         else:
             new_lines.append(line)
     return "\n".join(new_lines) + "\n"
@@ -72,6 +117,16 @@ def main() -> None:
     ap.add_argument("--path-mode", choices=["container", "host"], default="container")
     ap.add_argument("--repo-root", type=Path, default=None)
     ap.add_argument("--container-base", default="/work")
+    ap.add_argument("--experiment-prefix", default="PLB-S1-DIA",
+                    help="Experiment-name prefix (e.g. PLB-S2-DIA for the plasma stage).")
+    ap.add_argument("--superimpose", action="store_true",
+                    help="Stage 2: overlay simulated spike-in onto a real plasma .d "
+                         "(add_real_data_noise=false, superimpose_on_reference=true). "
+                         "Pair with --reference-path and YE-only seeds.")
+    ap.add_argument("--reference-path", default=None,
+                    help="Repoint reference_path (the real plasma .d for --superimpose).")
+    ap.add_argument("--gradient-length", default=None,
+                    help="Override gradient_length to match the reference plasma .d span.")
     args = ap.parse_args()
 
     repo_root = args.repo_root or Path(__file__).resolve().parents[1]
@@ -89,15 +144,21 @@ def main() -> None:
     rel_save = args.out_dir.relative_to(repo_root) \
         if args.out_dir.is_absolute() else args.out_dir
 
+    reference_path = args.reference_path
+    if reference_path is not None and args.path_mode == "host":
+        reference_path = rewrite_value(reference_path, host_substitutions(repo_root))
+
     suffix = args.seed_suffix
     for sample in args.samples:
         sample_dir = args.out_dir / f"sample{sample}{suffix}"
         sample_dir.mkdir(parents=True, exist_ok=True)
         seed_path = f"{work_prefix}/{rel_seed}/seed_sample{sample}{suffix}.csv"
         save_path = f"{work_prefix}/{rel_save}/sample{sample}{suffix}"
-        experiment = f"PLB-S1-DIA-sample{sample}{suffix.replace('_', '-')}"
+        experiment = f"{args.experiment_prefix}-sample{sample}{suffix.replace('_', '-')}"
         text = render(base_text, sample=sample, seed_csv=seed_path,
-                      save_path=save_path, experiment_name=experiment)
+                      save_path=save_path, experiment_name=experiment,
+                      reference_path=reference_path, superimpose=args.superimpose,
+                      gradient_length=args.gradient_length)
         out_path = sample_dir / "config.toml"
         out_path.write_text(text, encoding="utf-8")
         print(f"wrote {out_path}")

@@ -169,6 +169,14 @@ def main() -> None:
                          "(takes precedence over --run-prefix). Use for the L-site "
                          "reports whose runs are slot-coded mid-string, e.g. "
                          "'Slot2-11' (=Sample A) / 'Slot2-12' (=Sample B).")
+    ap.add_argument("--keep-species", nargs="+", default=None,
+                    choices=["HUMAN", "YEAST", "ECOLI"],
+                    help="Keep only peptides assigned to these species; everything "
+                         "else (other species, plus ambiguous/contaminant rows that "
+                         "resolve to None) is dropped. Use '--keep-species YEAST ECOLI' "
+                         "to build YE-only seeds for the Stage-2 superimpose-on-real-"
+                         "plasma route, where the human background comes from the real "
+                         "plasma .d rather than the seed.")
     ap.add_argument("--ratio-mode", choices=["observed", "imposed"], default="observed",
                     help="observed: use the report's (DIA-NN-compressed) intensities; "
                          "the oracle is the seeded ratio. imposed: discard found "
@@ -268,6 +276,19 @@ def main() -> None:
     # silently deleted (the optional-column logic below then omits charge).
     grouped = out.groupby(group_keys, as_index=False, dropna=False).agg(**agg)
 
+    # Optional species restriction (applies to BOTH ratio modes). The union
+    # `protein` is resolved by assign_species(), so cross-species peptides (→ None)
+    # are dropped here too. YE-only seeds for Stage 2 keep {YEAST, ECOLI}.
+    n_species_dropped = 0
+    if args.keep_species:
+        keep_set = set(args.keep_species)
+        keep_mask = grouped["protein"].map(assign_species).isin(keep_set)
+        n_species_dropped = int((~keep_mask).sum())
+        grouped = grouped[keep_mask].reset_index(drop=True)
+        if grouped.empty:
+            raise SystemExit(f"--keep-species {sorted(keep_set)} matched 0 rows "
+                             f"(dropped all {n_species_dropped:,}). Wrong species set?")
+
     # --- imposed ratio mode -------------------------------------------------
     # Keep the found IDs (sequence/charge/rt/im) but THROW AWAY the found
     # intensity. Each ion gets a Tenzer baseline (deterministic per sequence+
@@ -328,6 +349,9 @@ def main() -> None:
           f"  from {n_raw:,} raw report rows")
     if n_bad:
         print(f"  dropped {n_bad:,} rows with sequences TimSim can't parse")
+    if args.keep_species:
+        print(f"  --keep-species {sorted(set(args.keep_species))}: dropped "
+              f"{n_species_dropped:,} rows of other/ambiguous species")
     if args.ratio_mode == "imposed":
         print(f"  imposed mode: intensity = Tenzer baseline x species fraction "
               f"(upscale={args.upscale_factor:g}); found intensities discarded")
