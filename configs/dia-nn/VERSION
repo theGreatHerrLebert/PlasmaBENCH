@@ -1,0 +1,10 @@
+DIA-NN 1.8.1 (Data-Independent Acquisition by Neural Networks)
+  Compiled on Apr 15 2022 08:45:18
+  path: tools/diann/1.8.1/diann-1.8.1
+
+DIA-NN 2.5.0 Academia  (Data-Independent Acquisition by Neural Networks)
+  Compiled on Apr 12 2026 10:45:33
+  path: tools/diann/2.5.0/diann-2.5.0/diann-linux
+
+Source: https://github.com/vdemichev/DiaNN (academic Linux builds)
+Fetch:  bash scripts/get_diann.sh

@@ -65,6 +65,10 @@ def main() -> None:
     ap.add_argument("--seeds-dir", required=True, type=Path)
     ap.add_argument("--out-dir", required=True, type=Path)
     ap.add_argument("--samples", nargs="+", default=["A", "B"])
+    ap.add_argument("--seed-suffix", default="",
+                    help="Seed/variant suffix, e.g. '_imposed' to use "
+                         "seed_sample<A|B>_imposed.csv and write to sample<A|B>_imposed/ "
+                         "(keeps observed and imposed runs from colliding).")
     ap.add_argument("--path-mode", choices=["container", "host"], default="container")
     ap.add_argument("--repo-root", type=Path, default=None)
     ap.add_argument("--container-base", default="/work")
@@ -85,12 +89,13 @@ def main() -> None:
     rel_save = args.out_dir.relative_to(repo_root) \
         if args.out_dir.is_absolute() else args.out_dir
 
+    suffix = args.seed_suffix
     for sample in args.samples:
-        sample_dir = args.out_dir / f"sample{sample}"
+        sample_dir = args.out_dir / f"sample{sample}{suffix}"
         sample_dir.mkdir(parents=True, exist_ok=True)
-        seed_path = f"{work_prefix}/{rel_seed}/seed_sample{sample}.csv"
-        save_path = f"{work_prefix}/{rel_save}/sample{sample}"
-        experiment = f"PLB-S1-DIA-sample{sample}"
+        seed_path = f"{work_prefix}/{rel_seed}/seed_sample{sample}{suffix}.csv"
+        save_path = f"{work_prefix}/{rel_save}/sample{sample}{suffix}"
+        experiment = f"PLB-S1-DIA-sample{sample}{suffix.replace('_', '-')}"
         text = render(base_text, sample=sample, seed_csv=seed_path,
                       save_path=save_path, experiment_name=experiment)
         out_path = sample_dir / "config.toml"

@@ -5,19 +5,30 @@ quantified peptide must be attributable to human (plasma), yeast, or
 E. coli, and the few that aren't (shared/ambiguous, contaminants) must be
 excluded from the ratio oracle rather than silently miscounted.
 
-Assignment is by UniProt entry-name suffix (`_HUMAN`, `_YEAST`, `_ECOLI`),
-which is what DIA-NN and FragPipe carry through in their protein columns
-when the search FASTA is the standard SwissProt download per organism. If
-Ute's FASTA uses different organism tags, extend `SPECIES_TAGS`.
+Assignment is by UniProt entry-name suffix (`_HUMAN`, `_YEAS8`, `_ECOLI`),
+which is what DIA-NN and FragPipe carry through in their `Protein.Names`
+column when the search FASTA is the standard SwissProt download per
+organism. If Ute's FASTA uses different organism tags, extend `SPECIES_TAGS`.
+
+NOTE: tags live in `Protein.Names` (e.g. `ALBU_HUMAN`), NOT `Protein.Group`
+(bare accessions like `P02768`). Feed the names column here.
+
+The yeast proteome Ute used is the *strain-specific* S. cerevisiae download,
+whose UniProt OS code is `YEAS8` (strain ATCC 204508 / S288c) — so the tag is
+`_YEAS8`, not the canonical `_YEAST`. Both are mapped to YEAST so a mixed
+FASTA still resolves. Contaminant entries (`_CONTA`, the cRAP set) match no
+tag and therefore return None — correctly excluded from the ratio oracle.
 """
 from __future__ import annotations
 
 import re
 
 # UniProt OS tags → canonical species label. E. coli SwissProt entries are
-# `*_ECOLI`; yeast (S. cerevisiae) `*_YEAST`; human `*_HUMAN`.
+# `*_ECOLI`; human `*_HUMAN`; yeast appears as `*_YEAS8` (strain-specific) or
+# `*_YEAST` (canonical) — both map to YEAST.
 SPECIES_TAGS: dict[str, str] = {
     "_HUMAN": "HUMAN",
+    "_YEAS8": "YEAST",
     "_YEAST": "YEAST",
     "_ECOLI": "ECOLI",
 }

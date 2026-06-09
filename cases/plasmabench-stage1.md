@@ -24,10 +24,14 @@ the experimental runs are the real-data complement.
 
 ## Evidence
 
+> **Status:** the evaluator (`make stage1-eval`) is **not yet implemented** (stub,
+> exits 64). The contract below is the declared target; see the scorer
+> requirements note before building it.
+
 | Aspect | Value |
 |---|---|
-| Oracle | TimSim peptide/precursor blueprints per sample + known B/A ratios (human 1.0, yeast 3.0, E. coli 0.5) |
-| Tolerance | Per metric: species-resolved recall, true FDR, and log2-ratio recovery error. Numeric thresholds set per release. |
+| Oracle | TimSim peptide/precursor blueprints per sample (the final `synthetic_data.db`, **intersected** A∩B for ratios) + known B/A ratios (human 1.0, yeast 3.0, E. coli 0.5). The raw blueprint ratios carry a single global offset from TimSim's per-file median normalization — the scorer **must human-reference-normalize** (estimate one scale from human precursors, apply to all species) and report raw + normalized. |
+| Tolerance | Per metric: species-resolved recall, true FDR, and human-anchored log2-ratio recovery error. Numeric thresholds set per release. |
 | Command | `make stage1-eval` (scores per-tool output against the blueprint + ratio map) |
 | Artifact | `results/stage1/metrics.json` plus per-tool tables under `results/stage1/<tool>/` |
 
@@ -36,7 +40,8 @@ Inputs:
   TimSim seeds by `scripts/build_seed_from_report.py`.
 - Background noise injected from a real TimsTOF DIA-PASEF blank acquired with the
   study method.
-- Organism assignment via `plasmabench/species.py` (UniProt `_HUMAN`/`_YEAST`/`_ECOLI`).
+- Organism assignment via `plasmabench/species.py` (UniProt `_HUMAN`/`_YEAS8`/`_ECOLI`;
+  the yeast spike-in is the EC1118 strain, tag `_YEAS8`, not the canonical `_YEAST`).
 
 ## Assumptions
 

@@ -19,10 +19,18 @@
 
 [paths]
 save_path       = "/work/simulations/stage1/dia/sampleSAMPLE_PLACEHOLDER"
-# TODO(Ute): real TimsTOF DIA-PASEF blank acquired with the study method.
-reference_path  = "/data/raw/dia/blanks/BLANK_PLACEHOLDER.d"
-# Ignored under from_findings, but keep a valid plasma+yeast+ecoli FASTA here
-# so other tooling resolves. TODO(Ute): study FASTA (human plasma + YEAST + ECOLI).
+# Real TimsTOF DIA-PASEF blank from Ute, Lab L MS method
+# (MethodName 20210518_diaPASEF_ramp0100ms_25Da_1_7scycletime_1600V): 13337 DIA
+# frames, 36 windows x 25 Da — defines the layout for use_reference_layout. NOTE
+# it is a SHORTER gradient than the PYE runs: frames span ~0-1500s (25 min) vs the
+# G-site IDs eluting to ~2121s (35 min). The seeds are RT-rescaled to <=1480s
+# (build_seed_from_report.py --rt-max 1480) so no peptides fall outside it.
+# Design: G-site found IDs simulated over this L-method background (only blank we
+# have; see cases / memory). The blueprint ground truth is exact regardless.
+reference_path  = "/data/raw/dia/blanks/G250513_005_Slot2-2_1_17993.d"
+# Ignored under from_findings, but kept valid for the DIA-NN/FragPipe search step.
+# Built by scripts/get_fasta.sh (human reviewed + EC1118 yeast _YEAS8 + E.coli K12),
+# QC'd at 99.1% seed-peptide coverage (scripts/qc_fasta_coverage.py).
 fasta_path      = "/data/raw/fasta/plasma_yeast_ecoli.fasta"
 findings_path   = "/work/simulations/stage1/seeds/seed_sampleSAMPLE_PLACEHOLDER.csv"
 modifications   = "/work/simulations/stage1/configs/modifications.toml"
@@ -31,7 +39,7 @@ existing_path   = ""
 [experiment]
 experiment_name      = "PLB-S1-DIA-sampleSAMPLE_PLACEHOLDER"
 acquisition_type     = "DIA"
-gradient_length      = 3600.0          # TODO(Ute): match the study DIA gradient (s)
+gradient_length      = 1500.0          # matches the L-method DIA blank span (~25 min)
 use_reference_layout = true
 reference_in_memory  = false
 use_bruker_sdk       = true

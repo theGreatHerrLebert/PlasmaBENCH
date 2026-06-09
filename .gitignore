@@ -1,6 +1,8 @@
 # Raw + intermediate data — never committed (link via fileshare/DVC instead).
 /data/raw/**
 !/data/raw/**/.gitkeep
+# Top-level raw drop from Ute (reports, blanks, zips — multi-GB). Same policy.
+/raw/
 /data/**/*.d/
 /simulations/**/seeds/
 /simulations/**/dia/
@@ -20,3 +22,6 @@ __pycache__/
 docker/.env
 .DS_Store
 .ipynb_checkpoints/
+
+# DIA-NN / external tool binaries (downloaded via scripts/get_diann.sh)
+/tools/
