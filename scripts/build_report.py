@@ -177,7 +177,8 @@ def build() -> str:
     S.append('<div class="key">On real plasma both engines sit ~0.8–0.9% at ion level; 1.8\'s protein '
              'FDR (1.73%) is still above 2.5\'s (0.94%) but the gap is far smaller than Stage 1 '
              '(7.5% vs 1.5%) — the dense background narrows the version difference.</div>')
-    S.append(img("stage2fix_25_fdr.png", "DIA-NN 2.5 Stage-2 simulated-spike-in FDR/recall (corrected, human excluded)."))
+    S.append(img("stage2fix_25_fdr.png", "DIA-NN 2.5 Stage-2 simulated-spike-in FDR (left) &amp; recall (right), corrected, human excluded."))
+    S.append(img("stage2fix_18_fdr.png", "DIA-NN 1.8 Stage-2 simulated-spike-in FDR (left) &amp; recall (right) — protein FDR 1.73% vs 2.5's 0.94%; recall comparable."))
 
     S.append("<h3>7d. Bias &amp; sensitivity vs TRUE abundance — blank vs real plasma</h3>")
     S.append(img("stage1_vs_stage2fix_trueabund.png", "Stage 1 (blank) vs Stage 2 (real plasma, corrected truth) — ratio bias & detection sensitivity vs true abundance. Human panel Stage-2-empty (no truth)."))
