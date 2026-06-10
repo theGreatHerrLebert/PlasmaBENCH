@@ -14,16 +14,16 @@ simulated — so:
 
 ## Status
 
-`dia/sample{A,B}_ye/config.toml` are **scaffolding** rendered with placeholders. Two
-things are still pending before they can run:
+**Reference plasma is DOWNLOADED** (2026-06-09): the plasma used for the PYE mix is
+`data/raw/dia/plasma/PYE_plasma_2022_135/` — runs `G250506_080_Slot2-16_1_17973.d` and
+`…_081_…_17974.d` (2 of 6 reps fetched; rest available from the Seafile share). RT span
+**0.9–2460 s (41 min)**, longer than the blank — so the seed IDs (elute to ~2121 s) **fit
+natively**: set `--gradient-length 2460` and YE seeds need **no aggressive RT compression**
+(unlike Stage-1's `--rt-max 1480` for the blank).
 
-1. **The real PYE-plasma `.d`** (Ute is uploading it; goes under
-   `data/raw/dia/plasma/`). The configs currently point at
-   `…/plasma/PYE_PLASMA_PLACEHOLDER.d`.
-2. **YE-only seeds** `seeds/seed_sample{A,B}_ye.csv` (human excluded). Not yet built.
-
-Also confirm `gradient_length` matches the plasma run's RT span (Ute's plasma gradient
-differs slightly from the blank — she says that's fine; set `--gradient-length` to match).
+Still pending: **YE-only seeds** `seeds/seed_sample{A,B}_ye.csv` — build with
+`build_seed_from_report.py --keep-species YEAST ECOLI` from the same G-site PYE1 report used
+for Stage-1 seeds (drop `--rt-max`, or use `--rt-max 2400` to stay inside the 2460 s span).
 
 ## Re-render once the plasma .d + YE seeds exist
 

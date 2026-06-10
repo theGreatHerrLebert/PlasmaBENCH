@@ -1,0 +1,510 @@
+DIA-NN 1.8.1 (Data-Independent Acquisition by Neural Networks)
+Compiled on Apr 14 2022 15:31:19
+Current date and time: Thu Mar 16 19:27:34 2023
+CPU: AuthenticAMD AMD Ryzen Threadripper 3970X 32-Core Processor
+SIMD instructions: AVX AVX2 FMA SSE4.1 SSE4.2 SSE4a 
+Logical CPU cores: 64
+diann.exe --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R1.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R2.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R3.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R4.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R5.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R6.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R1.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R2.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R3.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R4.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R5.d  --f E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R6.d  --lib  --threads 32 --verbose 1 --out E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report.tsv --qvalue 0.01 --matrices --out-lib E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_lib.tsv --gen-spec-lib --predictor --fasta E:\data\202303_PYE_ringtrial_UD\hye_30867_conts_172_2020-3-2_2-0-11-1.fasta --fasta-search --min-fr-mz 200 --max-fr-mz 1800 --met-excision --cut K*,R* --missed-cleavages 1 --min-pep-len 7 --max-pep-len 30 --min-pr-mz 300 --max-pr-mz 1800 --min-pr-charge 1 --max-pr-charge 5 --unimod4 --reanalyse --relaxed-prot-inf --smart-profiling --pg-level 2 --species-genes --peak-center --no-ifs-removal 
+
+Thread number set to 32
+Output will be filtered at 0.01 FDR
+Precursor/protein x samples expression level matrices will be saved along with the main report
+A spectral library will be generated
+Deep learning will be used to generate a new in silico spectral library from peptides provided
+Library-free search enabled
+Min fragment m/z set to 200
+Max fragment m/z set to 1800
+N-terminal methionine excision enabled
+In silico digest will involve cuts at K*,R*
+Maximum number of missed cleavages set to 1
+Min peptide length set to 7
+Max peptide length set to 30
+Min precursor m/z set to 300
+Max precursor m/z set to 1800
+Min precursor charge set to 1
+Max precursor charge set to 5
+Cysteine carbamidomethylation enabled as a fixed modification
+A spectral library will be created from the DIA runs and used to reanalyse them; .quant files will only be saved to disk during the first step
+Highly heuristic protein grouping will be used, to reduce the number of protein groups obtained; this mode is recommended for benchmarking protein ID numbers; use with caution for anything else
+When generating a spectral library, in silico predicted spectra will be retained if deemed more reliable than experimental ones
+Implicit protein grouping: genes; this determines which peptides are considered 'proteotypic' and thus affects protein FDR calculation
+Species suffix will be added to gene annotation; this affects proteotypicity definition
+Fixed-width center of each elution peak will be used for quantification
+Interference removal from fragment elution curves disabled
+DIA-NN will optimise the mass accuracy automatically using the first run in the experiment. This is useful primarily for quick initial analyses, when it is not yet known which mass accuracy setting works best for a particular acquisition scheme.
+Exclusion of fragments shared between heavy and light peptides from quantification is not supported in FASTA digest mode - disabled; to enable, generate an in silico predicted spectral library and analyse with this library
+
+12 files will be processed
+[0:00] Loading FASTA E:\data\202303_PYE_ringtrial_UD\hye_30867_conts_172_2020-3-2_2-0-11-1.fasta
+[0:05] Processing FASTA
+[0:14] Assembling elution groups
+[0:22] 5899651 precursors generated
+[0:22] Gene names missing for some isoforms
+[0:22] Library contains 30988 proteins, and 30589 genes
+[0:22] [0:31] [16:44] [18:25] [18:30] [18:35] Saving the library to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_lib.predicted.speclib
+[18:43] Initialising library
+
+[18:48] First pass: generating a spectral library from DIA data
+[18:48] File #1/12
+[18:48] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R1.d
+For most diaPASEF datasets it is better to manually fix both the MS1 and MS2 mass accuracies to values in the range 10-15 ppm.
+[19:24] 4251038 library precursors are potentially detectable
+[19:24] Processing...
+[22:05] RT window set to 1.88626
+[22:05] Ion mobility window set to 0.0385935
+[22:05] Peak width: 3.232
+[22:05] Scan window radius set to 7
+[22:06] Recommended MS1 mass accuracy setting: 12.5898 ppm
+[24:52] Optimised mass accuracy: 11.0279 ppm
+[29:16] Removing low confidence identifications
+[29:16] Removing interfering precursors
+[29:18] Training neural networks: 62083 targets, 41736 decoys
+[29:21] Number of IDs at 0.01 FDR: 27485
+[29:21] Calculating protein q-values
+[29:22] Number of genes identified at 1% FDR: 3835 (precursor-level), 3357 (protein-level) (inference performed using proteotypic peptides only)
+[29:22] Quantification
+[29:23] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R1.d.quant.
+
+[29:25] File #2/12
+[29:25] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R2.d
+[29:51] 4251038 library precursors are potentially detectable
+[29:52] Processing...
+[32:30] RT window set to 2.0398
+[32:30] Ion mobility window set to 0.0403219
+[32:31] Recommended MS1 mass accuracy setting: 11.7079 ppm
+[37:27] Removing low confidence identifications
+[37:28] Removing interfering precursors
+[37:30] Training neural networks: 68449 targets, 45390 decoys
+[37:33] Number of IDs at 0.01 FDR: 29784
+[37:33] Calculating protein q-values
+[37:34] Number of genes identified at 1% FDR: 4051 (precursor-level), 3568 (protein-level) (inference performed using proteotypic peptides only)
+[37:34] Quantification
+[37:35] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R2.d.quant.
+
+[37:37] File #3/12
+[37:37] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R3.d
+[38:04] 4251038 library precursors are potentially detectable
+[38:04] Processing...
+[41:15] RT window set to 1.97398
+[41:15] Ion mobility window set to 0.0411255
+[41:15] Recommended MS1 mass accuracy setting: 12.7097 ppm
+[46:25] Removing low confidence identifications
+[46:25] Removing interfering precursors
+[46:27] Training neural networks: 70608 targets, 45742 decoys
+[46:30] Number of IDs at 0.01 FDR: 30212
+[46:31] Calculating protein q-values
+[46:31] Number of genes identified at 1% FDR: 4211 (precursor-level), 3724 (protein-level) (inference performed using proteotypic peptides only)
+[46:32] Quantification
+[46:32] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R3.d.quant.
+
+[46:35] File #4/12
+[46:35] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R4.d
+[47:01] 4251038 library precursors are potentially detectable
+[47:02] Processing...
+[49:48] RT window set to 2.0732
+[49:48] Ion mobility window set to 0.0402848
+[49:48] Recommended MS1 mass accuracy setting: 12.761 ppm
+[55:13] Removing low confidence identifications
+[55:13] Removing interfering precursors
+[55:16] Training neural networks: 72065 targets, 47383 decoys
+[55:19] Number of IDs at 0.01 FDR: 30537
+[55:19] Calculating protein q-values
+[55:20] Number of genes identified at 1% FDR: 4331 (precursor-level), 3830 (protein-level) (inference performed using proteotypic peptides only)
+[55:20] Quantification
+[55:21] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R4.d.quant.
+
+[55:24] File #5/12
+[55:24] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R5.d
+[55:50] 4251038 library precursors are potentially detectable
+[55:50] Processing...
+[58:35] RT window set to 2.09186
+[58:35] Ion mobility window set to 0.0410834
+[58:35] Recommended MS1 mass accuracy setting: 12.7863 ppm
+[64:03] Removing low confidence identifications
+[64:04] Removing interfering precursors
+[64:06] Training neural networks: 70819 targets, 46170 decoys
+[64:09] Number of IDs at 0.01 FDR: 30663
+[64:10] Calculating protein q-values
+[64:10] Number of genes identified at 1% FDR: 4389 (precursor-level), 3876 (protein-level) (inference performed using proteotypic peptides only)
+[64:10] Quantification
+[64:11] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R5.d.quant.
+
+[64:14] File #6/12
+[64:14] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R6.d
+[64:40] 4251038 library precursors are potentially detectable
+[64:40] Processing...
+[67:26] RT window set to 2.07181
+[67:26] Ion mobility window set to 0.0389097
+[67:27] Recommended MS1 mass accuracy setting: 12.7487 ppm
+[72:46] Removing low confidence identifications
+[72:46] Removing interfering precursors
+[72:49] Training neural networks: 70350 targets, 46134 decoys
+[72:51] Number of IDs at 0.01 FDR: 29955
+[72:52] Calculating protein q-values
+[72:53] Number of genes identified at 1% FDR: 4361 (precursor-level), 3882 (protein-level) (inference performed using proteotypic peptides only)
+[72:53] Quantification
+[72:53] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R6.d.quant.
+
+[72:56] File #7/12
+[72:56] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R1.d
+[73:22] 4251038 library precursors are potentially detectable
+[73:22] Processing...
+[76:09] RT window set to 1.9146
+[76:09] Ion mobility window set to 0.0395219
+[76:10] Recommended MS1 mass accuracy setting: 12.3583 ppm
+[81:05] Removing low confidence identifications
+[81:05] Removing interfering precursors
+[81:08] Training neural networks: 71457 targets, 46968 decoys
+[81:11] Number of IDs at 0.01 FDR: 32010
+[81:11] Calculating protein q-values
+[81:12] Number of genes identified at 1% FDR: 4511 (precursor-level), 4075 (protein-level) (inference performed using proteotypic peptides only)
+[81:12] Quantification
+[81:13] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R1.d.quant.
+
+[81:16] File #8/12
+[81:16] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R2.d
+[81:40] 4251038 library precursors are potentially detectable
+[81:40] Processing...
+[84:16] RT window set to 1.9983
+[84:16] Ion mobility window set to 0.0394651
+[84:16] Recommended MS1 mass accuracy setting: 12.843 ppm
+[89:05] Removing low confidence identifications
+[89:06] Removing interfering precursors
+[89:08] Training neural networks: 76093 targets, 50580 decoys
+[89:11] Number of IDs at 0.01 FDR: 33425
+[89:12] Calculating protein q-values
+[89:12] Number of genes identified at 1% FDR: 4689 (precursor-level), 4167 (protein-level) (inference performed using proteotypic peptides only)
+[89:13] Quantification
+[89:13] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R2.d.quant.
+
+[89:16] File #9/12
+[89:16] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R3.d
+[89:41] 4251038 library precursors are potentially detectable
+[89:42] Processing...
+[92:25] RT window set to 1.90503
+[92:25] Ion mobility window set to 0.0408112
+[92:25] Recommended MS1 mass accuracy setting: 12.4991 ppm
+[97:20] Removing low confidence identifications
+[97:21] Removing interfering precursors
+[97:23] Training neural networks: 75938 targets, 49714 decoys
+[97:26] Number of IDs at 0.01 FDR: 34286
+[97:27] Calculating protein q-values
+[97:28] Number of genes identified at 1% FDR: 4857 (precursor-level), 4332 (protein-level) (inference performed using proteotypic peptides only)
+[97:28] Quantification
+[97:29] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R3.d.quant.
+
+[97:31] File #10/12
+[97:31] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R4.d
+[97:57] 4251038 library precursors are potentially detectable
+[97:58] Processing...
+[100:18] RT window set to 1.96283
+[100:18] Ion mobility window set to 0.0402746
+[100:18] Recommended MS1 mass accuracy setting: 12.5168 ppm
+[105:18] Removing low confidence identifications
+[105:18] Removing interfering precursors
+[105:21] Training neural networks: 78398 targets, 50854 decoys
+[105:24] Number of IDs at 0.01 FDR: 33918
+[105:25] Calculating protein q-values
+[105:25] Number of genes identified at 1% FDR: 4881 (precursor-level), 4349 (protein-level) (inference performed using proteotypic peptides only)
+[105:25] Quantification
+[105:26] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R4.d.quant.
+
+[105:29] File #11/12
+[105:29] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R5.d
+[105:55] 4251038 library precursors are potentially detectable
+[105:55] Processing...
+[108:37] RT window set to 1.86116
+[108:37] Ion mobility window set to 0.0406009
+[108:37] Recommended MS1 mass accuracy setting: 13.1495 ppm
+[113:25] Removing low confidence identifications
+[113:25] Removing interfering precursors
+[113:28] Training neural networks: 73593 targets, 48401 decoys
+[113:31] Number of IDs at 0.01 FDR: 32954
+[113:32] Calculating protein q-values
+[113:32] Number of genes identified at 1% FDR: 4797 (precursor-level), 4365 (protein-level) (inference performed using proteotypic peptides only)
+[113:32] Quantification
+[113:33] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R5.d.quant.
+
+[113:36] File #12/12
+[113:36] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R6.d
+[114:02] 4251038 library precursors are potentially detectable
+[114:02] Processing...
+[116:45] RT window set to 1.85437
+[116:45] Ion mobility window set to 0.0389228
+[116:45] Recommended MS1 mass accuracy setting: 13.3656 ppm
+[121:32] Removing low confidence identifications
+[121:32] Removing interfering precursors
+[121:34] Training neural networks: 75130 targets, 49823 decoys
+[121:38] Number of IDs at 0.01 FDR: 32680
+[121:38] Calculating protein q-values
+[121:39] Number of genes identified at 1% FDR: 4889 (precursor-level), 4350 (protein-level) (inference performed using proteotypic peptides only)
+[121:39] Quantification
+[121:40] Quantification information saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R6.d.quant.
+
+[121:42] Cross-run analysis
+[121:42] Reading quantification information: 12 files
+[121:44] Quantifying peptides
+[121:47] Assembling protein groups
+[121:52] Quantifying proteins
+[121:52] Calculating q-values for protein and gene groups
+[121:53] Calculating global q-values for protein and gene groups
+[121:53] Writing report
+[122:15] Report saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report-first-pass.tsv.
+[122:15] Saving precursor levels matrix
+[122:15] Precursor levels matrix (1% precursor and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report-first-pass.pr_matrix.tsv.
+[122:15] Saving protein group levels matrix
+[122:15] Protein group levels matrix (1% precursor FDR and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report-first-pass.pg_matrix.tsv.
+[122:15] Saving gene group levels matrix
+[122:15] Gene groups levels matrix (1% precursor FDR and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report-first-pass.gg_matrix.tsv.
+[122:15] Saving unique genes levels matrix
+[122:15] Unique genes levels matrix (1% precursor FDR and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report-first-pass.unique_genes_matrix.tsv.
+[122:15] Stats report saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report-first-pass.stats.tsv
+[122:15] Generating spectral library:
+[122:15] 48724 precursors passing the FDR threshold are to be extracted
+[122:15] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R1.d
+[122:39] 4251038 library precursors are potentially detectable
+[122:40] 2122 spectra added to the library
+[122:42] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R2.d
+[123:07] 4251038 library precursors are potentially detectable
+[123:07] 2698 spectra added to the library
+[123:10] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R3.d
+[123:34] 4251038 library precursors are potentially detectable
+[123:35] 2270 spectra added to the library
+[123:38] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R4.d
+[124:02] 4251038 library precursors are potentially detectable
+[124:03] 1737 spectra added to the library
+[124:06] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R5.d
+[124:31] 4251038 library precursors are potentially detectable
+[124:32] 4195 spectra added to the library
+[124:35] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R6.d
+[125:00] 4251038 library precursors are potentially detectable
+[125:01] 2641 spectra added to the library
+[125:04] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R1.d
+[125:28] 4251038 library precursors are potentially detectable
+[125:28] 1234 spectra added to the library
+[125:32] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R2.d
+[125:55] 4251038 library precursors are potentially detectable
+[125:56] 3552 spectra added to the library
+[125:59] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R3.d
+[126:23] 4251038 library precursors are potentially detectable
+[126:24] 6954 spectra added to the library
+[126:27] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R4.d
+[126:52] 4251038 library precursors are potentially detectable
+[126:53] 2637 spectra added to the library
+[126:56] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R5.d
+[127:21] 4251038 library precursors are potentially detectable
+[127:22] 3078 spectra added to the library
+[127:25] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R6.d
+[127:49] 4251038 library precursors are potentially detectable
+[127:50] 3373 spectra added to the library
+[127:54] Saving spectral library to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_lib.tsv
+[127:59] 48724 precursors saved
+[127:59] Loading the generated library and saving it in the .speclib format
+[127:59] Loading spectral library E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_lib.tsv
+[128:01] Spectral library loaded: 6761 protein isoforms, 6734 protein groups and 48724 precursors in 44109 elution groups.
+[128:01] Loading protein annotations from FASTA E:\data\202303_PYE_ringtrial_UD\hye_30867_conts_172_2020-3-2_2-0-11-1.fasta
+[128:02] Gene names missing for some isoforms
+[128:02] Library contains 6761 proteins, and 6693 genes
+[128:02] Saving the library to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_lib.tsv.speclib
+
+[128:06] Second pass: using the newly created spectral library to reanalyse the data
+[128:06] File #1/12
+[128:06] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R1.d
+[128:29] 48724 library precursors are potentially detectable
+[128:29] Processing...
+[128:32] RT window set to 0.725196
+[128:32] Ion mobility window set to 0.0128122
+[128:32] Recommended MS1 mass accuracy setting: 12.1233 ppm
+[128:33] Removing low confidence identifications
+[128:33] Removing interfering precursors
+[128:34] Training neural networks: 46920 targets, 37613 decoys
+[128:36] Number of IDs at 0.01 FDR: 40477
+[128:37] Calculating protein q-values
+[128:37] Number of genes identified at 1% FDR: 5150 (precursor-level), 4432 (protein-level) (inference performed using proteotypic peptides only)
+[128:37] Quantification
+
+[128:41] File #2/12
+[128:41] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R2.d
+[129:02] 48724 library precursors are potentially detectable
+[129:02] Processing...
+[129:05] RT window set to 0.727214
+[129:05] Ion mobility window set to 0.0130909
+[129:05] Recommended MS1 mass accuracy setting: 11.6806 ppm
+[129:07] Removing low confidence identifications
+[129:07] Removing interfering precursors
+[129:08] Training neural networks: 47065 targets, 37884 decoys
+[129:10] Number of IDs at 0.01 FDR: 41534
+[129:11] Calculating protein q-values
+[129:11] Number of genes identified at 1% FDR: 5309 (precursor-level), 4527 (protein-level) (inference performed using proteotypic peptides only)
+[129:11] Quantification
+
+[129:14] File #3/12
+[129:14] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R3.d
+[129:36] 48724 library precursors are potentially detectable
+[129:36] Processing...
+[129:39] RT window set to 0.718192
+[129:39] Ion mobility window set to 0.013352
+[129:39] Recommended MS1 mass accuracy setting: 13.4768 ppm
+[129:41] Removing low confidence identifications
+[129:41] Removing interfering precursors
+[129:42] Training neural networks: 47348 targets, 39150 decoys
+[129:44] Number of IDs at 0.01 FDR: 42464
+[129:45] Calculating protein q-values
+[129:45] Number of genes identified at 1% FDR: 5383 (precursor-level), 4571 (protein-level) (inference performed using proteotypic peptides only)
+[129:45] Quantification
+
+[129:48] File #4/12
+[129:48] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R4.d
+[130:11] 48724 library precursors are potentially detectable
+[130:11] Processing...
+[130:14] RT window set to 0.710547
+[130:14] Ion mobility window set to 0.0133182
+[130:14] Recommended MS1 mass accuracy setting: 12.8541 ppm
+[130:16] Removing low confidence identifications
+[130:16] Removing interfering precursors
+[130:17] Training neural networks: 47376 targets, 39245 decoys
+[130:19] Number of IDs at 0.01 FDR: 42141
+[130:20] Calculating protein q-values
+[130:20] Number of genes identified at 1% FDR: 5412 (precursor-level), 4601 (protein-level) (inference performed using proteotypic peptides only)
+[130:20] Quantification
+
+[130:24] File #5/12
+[130:24] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R5.d
+[130:47] 48724 library precursors are potentially detectable
+[130:47] Processing...
+[130:50] RT window set to 0.700968
+[130:50] Ion mobility window set to 0.0133255
+[130:50] Recommended MS1 mass accuracy setting: 12.7393 ppm
+[130:52] Removing low confidence identifications
+[130:52] Removing interfering precursors
+[130:53] Training neural networks: 47187 targets, 38934 decoys
+[130:54] Number of IDs at 0.01 FDR: 42032
+[130:55] Calculating protein q-values
+[130:55] Number of genes identified at 1% FDR: 5436 (precursor-level), 4556 (protein-level) (inference performed using proteotypic peptides only)
+[130:55] Quantification
+
+[130:59] File #6/12
+[130:59] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\A1_G_DIA_nlc_timspro_R6.d
+[131:22] 48724 library precursors are potentially detectable
+[131:22] Processing...
+[131:25] RT window set to 0.702834
+[131:25] Ion mobility window set to 0.013151
+[131:25] Recommended MS1 mass accuracy setting: 13.2418 ppm
+[131:27] Removing low confidence identifications
+[131:27] Removing interfering precursors
+[131:28] Training neural networks: 46883 targets, 38869 decoys
+[131:30] Number of IDs at 0.01 FDR: 41180
+[131:30] Calculating protein q-values
+[131:30] Number of genes identified at 1% FDR: 5389 (precursor-level), 4548 (protein-level) (inference performed using proteotypic peptides only)
+[131:30] Quantification
+
+[131:34] File #7/12
+[131:34] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R1.d
+[131:56] 48724 library precursors are potentially detectable
+[131:56] Processing...
+[131:59] RT window set to 0.727652
+[131:59] Ion mobility window set to 0.0141149
+[131:59] Recommended MS1 mass accuracy setting: 12.2089 ppm
+[132:01] Removing low confidence identifications
+[132:01] Removing interfering precursors
+[132:02] Training neural networks: 47317 targets, 38936 decoys
+[132:04] Number of IDs at 0.01 FDR: 43459
+[132:05] Calculating protein q-values
+[132:05] Number of genes identified at 1% FDR: 5435 (precursor-level), 4601 (protein-level) (inference performed using proteotypic peptides only)
+[132:05] Quantification
+
+[132:09] File #8/12
+[132:09] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R2.d
+[132:30] 48724 library precursors are potentially detectable
+[132:30] Processing...
+[132:33] RT window set to 0.724663
+[132:33] Ion mobility window set to 0.0127109
+[132:33] Recommended MS1 mass accuracy setting: 11.856 ppm
+[132:35] Removing low confidence identifications
+[132:35] Removing interfering precursors
+[132:36] Training neural networks: 47066 targets, 37625 decoys
+[132:38] Number of IDs at 0.01 FDR: 43125
+[132:38] Calculating protein q-values
+[132:39] Number of genes identified at 1% FDR: 5431 (precursor-level), 4571 (protein-level) (inference performed using proteotypic peptides only)
+[132:39] Quantification
+
+[132:42] File #9/12
+[132:42] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R3.d
+[133:04] 48724 library precursors are potentially detectable
+[133:04] Processing...
+[133:07] RT window set to 0.711307
+[133:07] Ion mobility window set to 0.0132943
+[133:07] Recommended MS1 mass accuracy setting: 13.0148 ppm
+[133:09] Removing low confidence identifications
+[133:09] Removing interfering precursors
+[133:10] Training neural networks: 47523 targets, 39004 decoys
+[133:12] Number of IDs at 0.01 FDR: 44382
+[133:12] Calculating protein q-values
+[133:13] Number of genes identified at 1% FDR: 5536 (precursor-level), 4677 (protein-level) (inference performed using proteotypic peptides only)
+[133:13] Quantification
+
+[133:16] File #10/12
+[133:16] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R4.d
+[133:39] 48724 library precursors are potentially detectable
+[133:39] Processing...
+[133:42] RT window set to 0.709171
+[133:42] Ion mobility window set to 0.013139
+[133:42] Recommended MS1 mass accuracy setting: 13.3178 ppm
+[133:44] Removing low confidence identifications
+[133:44] Removing interfering precursors
+[133:45] Training neural networks: 47440 targets, 39031 decoys
+[133:47] Number of IDs at 0.01 FDR: 44021
+[133:47] Calculating protein q-values
+[133:47] Number of genes identified at 1% FDR: 5561 (precursor-level), 4739 (protein-level) (inference performed using proteotypic peptides only)
+[133:47] Quantification
+
+[133:51] File #11/12
+[133:51] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R5.d
+[134:14] 48724 library precursors are potentially detectable
+[134:14] Processing...
+[134:17] RT window set to 0.711836
+[134:17] Ion mobility window set to 0.0132161
+[134:17] Recommended MS1 mass accuracy setting: 12.9813 ppm
+[134:19] Removing low confidence identifications
+[134:19] Removing interfering precursors
+[134:20] Training neural networks: 47366 targets, 38966 decoys
+[134:22] Number of IDs at 0.01 FDR: 43853
+[134:22] Calculating protein q-values
+[134:22] Number of genes identified at 1% FDR: 5590 (precursor-level), 4667 (protein-level) (inference performed using proteotypic peptides only)
+[134:22] Quantification
+
+[134:26] File #12/12
+[134:26] Loading run E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\nlc_timspro\B1_G_DIA_nlc_timspro_R6.d
+[134:49] 48724 library precursors are potentially detectable
+[134:49] Processing...
+[134:52] RT window set to 0.712957
+[134:52] Ion mobility window set to 0.0133984
+[134:52] Recommended MS1 mass accuracy setting: 13.5373 ppm
+[134:54] Removing low confidence identifications
+[134:54] Removing interfering precursors
+[134:55] Training neural networks: 46871 targets, 38886 decoys
+[134:57] Number of IDs at 0.01 FDR: 42765
+[134:57] Calculating protein q-values
+[134:57] Number of genes identified at 1% FDR: 5557 (precursor-level), 4700 (protein-level) (inference performed using proteotypic peptides only)
+[134:57] Quantification
+
+[135:01] Cross-run analysis
+[135:01] Reading quantification information: 12 files
+[135:02] Quantifying peptides
+[135:06] Quantifying proteins
+[135:06] Calculating q-values for protein and gene groups
+[135:07] Calculating global q-values for protein and gene groups
+[135:07] Writing report
+[135:33] Report saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report.tsv.
+[135:33] Saving precursor levels matrix
+[135:34] Precursor levels matrix (1% precursor and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report.pr_matrix.tsv.
+[135:34] Saving protein group levels matrix
+[135:34] Protein group levels matrix (1% precursor FDR and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report.pg_matrix.tsv.
+[135:34] Saving gene group levels matrix
+[135:34] Gene groups levels matrix (1% precursor FDR and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report.gg_matrix.tsv.
+[135:34] Saving unique genes levels matrix
+[135:34] Unique genes levels matrix (1% precursor FDR and protein group FDR) saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report.unique_genes_matrix.tsv.
+[135:34] Stats report saved to E:\data\202303_PYE_ringtrial_UD\G_Krjgsveld_HD\tims\PYE1\G_PYE1_tims_report.stats.tsv
+
+Finished
+
