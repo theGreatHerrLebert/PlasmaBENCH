@@ -141,30 +141,46 @@ def build() -> str:
     <b>yeast 0.40×, E. coli 0.63×</b> the human median (A/B oracle ratios preserved). Human is
     real background with no truth (<code>truth_scope=background_unknown</code>): scored
     empirically only; FDR/sensitivity restricted to the simulated spike-ins.</p>""")
-    S.append("<h3>7a. Stage-1 vs Stage-2 at a glance (DIA-NN 2.5)</h3>")
-    S.append(table(["metric", "Stage 1 (blank noise)", "Stage 2 (real plasma)"],
-                   [["ion empirical FDR", "0.49%", "0.95%"],
-                    ["ion recall (TPR)", "67%", "60%"],
-                    ["yeast A/B (protein)", "−1.58 ✓", "−0.71 (compressed)"],
-                    ["E. coli A/B (protein)", "+0.91", "+1.60 (over-separated)"],
-                    ["quant Spearman (YE)", "0.92–0.96", "0.92–0.93"]]))
-    S.append('<div class="key">The real plasma background (vs blank noise): <b>~doubles the '
-             'empirical FDR</b> (interference spawns false YE IDs), <b>lowers recall</b> (YE buried '
-             'in plasma), and <b>distorts the A/B ratios species-specifically</b> — yet leaves the '
-             '<b>within-sample quant rank intact</b> (Spearman ≈ 0.92). So the distortion is in the '
-             'cross-sample ratio, not the abundance ordering. Reproducible across backgrounds 080 &amp; 081.</div>')
+    S.append('<div class="key">A simulator bug surfaced here and was fixed (§7a). Post-fix the '
+             'blueprint A/B truth is nominal again (yeast 3.01, E. coli 0.51), so everything below is '
+             'scored against correct truth.</div>')
 
-    S.append("<h3>7b. Ratio recovery</h3>")
-    S.append(img("stage2_r080_ratios_protein.png", "Stage 2, protein. Yeast compressed (A/B −0.71 vs −1.58), E. coli over-separated (+1.60 vs +1.0), human (real plasma) anchored at 0."))
-    S.append(img("stage2_r080_ratios_ion.png", "Stage 2, ion level — same species-specific distortion."))
-    S.append("<h3>7c. Quant correlation &amp; FDR (simulated spike-in)</h3>")
-    S.append(img("stage2_r080_quant.png", "Stage 2 quant correlation vs truth (YE only; human has no blueprint). Spearman ≈ 0.92 — rank preserved despite ratio distortion."))
-    S.append(img("stage2_r080_fdr.png", "Stage 2 simulated-spike-in FDR/TPR (human excluded as background). FDR ~0.95% (up from 0.49% on blank), recall ~60% (down from 67%)."))
+    S.append("<h3>7a. A from_findings ratio-distortion bug — found &amp; fixed</h3>")
+    S.append("""<p>Initial Stage-2 ratios looked badly off (E. coli "over-separated", yeast
+    compressed, large spread). Root cause: TimSim <code>load_findings</code> scaled events by each
+    sample's <i>own</i> median intensity, so for an A/B experiment the differing medians silently
+    rescaled every cross-sample ratio by median(A)/median(B) ≈ 0.7 — the <i>simulated truth itself</i>
+    was off-nominal. Stage 1 was affected too (human truth B/A came out 0.74 instead of 1.0 — the
+    smoking gun), but hidden because the ratio panels human-anchor, which cancels a uniform factor.
+    Fixed via a shared reference median (rustims PR #407, merged); sim-QC confirms blueprint A/B back
+    to nominal. All Stage-2 numbers below use the corrected re-sim.</p>""")
 
-    S.append("<h3>7d. Ratio bias &amp; sensitivity vs TRUE abundance</h3>")
-    S.append(img("stage1_vs_stage2_trueabund.png", "Stage 1 (blank) vs Stage 2 (real plasma) ratio bias & sensitivity vs true abundance. "
-             "Stage 2 yeast compresses; E. coli over-separates. Human panel Stage-2-empty (no truth)."))
-    S.append(img("stage2_080_vs_081_trueabund.png", "Stage-2 reproducibility: plasma background 080 vs 081 — the species-specific distortion replicates."))
+    S.append("<h3>7b. Ratio recovery (corrected truth) — 1.8 vs 2.5</h3>")
+    S.append(table(["protein A/B (expected ecoli +1.0, yeast −1.58)", "E. coli", "yeast", "human anchor (080 / 081)"],
+                   [["DIA-NN 1.8", "+1.01", "−1.64", "−0.64 / −0.69 (stable)"],
+                    ["DIA-NN 2.5", "+1.12", "−1.11", "−0.31 / −1.51 (unstable)"]]))
+    S.append('<div class="key">On real plasma, <b>DIA-NN 1.8 recovers the spike-in ratios accurately '
+             'and reproducibly</b> (yeast −1.64, E. coli +1.01 on both backgrounds, stable human anchor). '
+             '<b>2.5 is unstable</b>: its quant of the real human background (the anchor) swings from '
+             '−0.31 to −1.51 between two near-identical plasma backgrounds, so its YE ratios jump around '
+             '— 2.5\'s QuantUMS/MaxLFQ normalization looks destabilized by the dense plasma + superimposed '
+             'spike-in. <b>Preliminary</b>: may partly be the same-background pairing interacting with '
+             '2.5\'s cross-run normalization; under investigation.</div>')
+    S.append(img("stage2fix_18_ratios_protein.png", "DIA-NN 1.8, Stage-2 corrected, protein — accurate (yeast −1.64, E. coli +1.01)."))
+    S.append(img("stage2fix_25_ratios_protein.png", "DIA-NN 2.5, Stage-2 corrected, protein — yeast compressed here (−1.11) and unstable across backgrounds (see anchor)."))
+    S.append(img("stage2fix_18v25_ratiobias.png", "Ratio bias vs abundance on real plasma, 1.8 vs 2.5 (corrected truth)."))
+
+    S.append("<h3>7c. FDR / recall on real plasma (simulated spike-in)</h3>")
+    S.append(table(["", "ion FDR", "ion recall", "protein FDR", "protein recall"],
+                   [["DIA-NN 2.5", "0.83%", "62%", "0.94%", "90%"],
+                    ["DIA-NN 1.8", "0.88%", "59%", "1.73%", "89%"]]))
+    S.append('<div class="key">On real plasma both engines sit ~0.8–0.9% at ion level; 1.8\'s protein '
+             'FDR (1.73%) is still above 2.5\'s (0.94%) but the gap is far smaller than Stage 1 '
+             '(7.5% vs 1.5%) — the dense background narrows the version difference.</div>')
+    S.append(img("stage2fix_25_fdr.png", "DIA-NN 2.5 Stage-2 simulated-spike-in FDR/recall (corrected, human excluded)."))
+
+    S.append("<h3>7d. Bias &amp; sensitivity vs TRUE abundance — blank vs real plasma</h3>")
+    S.append(img("stage1_vs_stage2fix_trueabund.png", "Stage 1 (blank) vs Stage 2 (real plasma, corrected truth) — ratio bias & detection sensitivity vs true abundance. Human panel Stage-2-empty (no truth)."))
 
     # ---- caveats ----
     S.append("<h2>8. Scope &amp; caveats</h2>")
