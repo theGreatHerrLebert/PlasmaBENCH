@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import html
 from pathlib import Path
 
 FIGDIR = Path("results/figures")
@@ -17,15 +18,16 @@ FIGDIR = Path("results/figures")
 def img(name: str, caption: str) -> str:
     p = FIGDIR / name
     if not p.exists():
-        return f'<p class="missing">[missing figure: {name}]</p>'
+        return f'<p class="missing">[missing figure: {html.escape(name)}]</p>'
     b64 = base64.b64encode(p.read_bytes()).decode()
-    return (f'<figure><img src="data:image/png;base64,{b64}" alt="{name}"/>'
-            f'<figcaption>{caption}</figcaption></figure>')
+    return (f'<figure><img src="data:image/png;base64,{b64}" alt="{html.escape(name)}"/>'
+            f'<figcaption>{html.escape(caption)}</figcaption></figure>')
 
 
 def table(headers, rows) -> str:
-    h = "".join(f"<th>{c}</th>" for c in headers)
-    r = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in row) + "</tr>" for row in rows)
+    h = "".join(f"<th>{html.escape(str(c))}</th>" for c in headers)
+    r = "".join("<tr>" + "".join(f"<td>{html.escape(str(c))}</td>" for c in row) + "</tr>"
+                for row in rows)
     return f'<table><thead><tr>{h}</tr></thead><tbody>{r}</tbody></table>'
 
 
@@ -51,7 +53,9 @@ small{color:#888}
 
 def build() -> str:
     S = []
-    S.append(f"<!doctype html><meta charset=utf-8><title>PlasmaBENCH Report</title><style>{CSS}</style>")
+    S.append('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+             '<meta name="viewport" content="width=device-width, initial-scale=1">'
+             f'<title>PlasmaBENCH Report</title><style>{CSS}</style></head><body>')
     S.append("<h1>PlasmaBENCH — TimSim-grounded benchmark of DIA software on mixed-proteome plasma</h1>")
     S.append("<p><small>Generated from <code>results/figures/</code>. Self-contained (figures embedded).</small></p>")
 
@@ -94,29 +98,35 @@ def build() -> str:
     S.append("<h2>4. Stage 1 — empirical FDR / recall (ground-truth only)</h2>")
     S.append('<div class="key">Headline: at the same nominal 1% q-value, DIA-NN 1.8\'s <b>true</b> '
              'error rate is ~2% at precursor and <b>~7.5% at protein</b>, while 2.5 holds precursor '
-             '&lt;0.5%. Sensitivity is comparable — 2.5 is better-calibrated, not less sensitive. '
-             'This independently reproduces the known "1.8 FDR control is poor" observation.</div>')
+             '&lt;0.5%. Recall is comparable (ion 67% vs 66%, protein 88.6% vs 90%) — so at low '
+             'abundance 2.5 detects as many precursors yet is better-calibrated. This independently '
+             'reproduces the known "1.8 FDR control is poor" observation. Protein FDR is group-credit; '
+             '"any-member" / "strict" definitions reported separately.</div>')
     S.append(table(["level", "1.8 FDR", "2.5 FDR", "1.8 / 2.5 recall"],
                    [["ion", "1.9%", "0.49%", "66% / 67%"],
                     ["peptide", "2.0%", "0.51%", "67% / 70%"],
-                    ["protein (group-credit)", "7.5%", "1.5%", "90% / 88%"]]))
-    S.append(img("stage1_diann25_fdr_blanksub.png", "DIA-NN 2.5 FDR/TPR, blank-subtracted. Protein FDR over the 1% line (inference inflation)."))
-    S.append(img("stage1_diann18_fdr.png", "DIA-NN 1.8 — FDR far over 1% (ion ~1.9%, protein ~7.5%)."))
-    S.append("<p><small>Blank subtraction: the noise-source blank yields 1,039 IDs (1,035 human); "
-             "subtracting blank-explained IDs from the FP side barely moves FDR (e.g. ion 0.53→0.49%), "
-             "so the SIM false positives are genuine, not noise-source leakage.</small></p>")
+                    ["protein (group-credit: any / strict)", "7.5% / 7.8%", "1.44% / 1.65%", "90% / 88.6%"]]))
+    S.append(img("stage1_diann25_fdr_blanksub.png", "DIA-NN 2.5 FDR/TPR, blank-subtracted. Protein group-credit FDR over the 1% line (inference inflation)."))
+    S.append(img("stage1_diann18_fdr.png", "DIA-NN 1.8 — FDR far over 1% (ion ~1.9%, protein group-credit ~7.5%)."))
+    S.append("<p><small>Blank subtraction: the noise-source blank yields 1,039 IDs (1,035 human, "
+             "4 yeast); subtracting blank-explained IDs from the FP side barely moves FDR "
+             "(ion 0.53→0.49%), i.e. <b>most SIM false positives are not explained by IDs seen in "
+             "the blank</b> — not a proof that every remaining FP is genuine, but blank leakage is "
+             "not the driver.</small></p>")
 
     # ---- Stage 1: overlap ----
     S.append("<h2>5. Stage 1 — cross-engine ID overlap</h2>")
     S.append(img("stage1_overlap_18_vs_25.png", "1.8 vs 2.5 ID overlap (q<0.01, A+B pooled). Precursor/peptide ~90% shared; "
-             "protein asymmetric — 1.8 has 647 unique proteins vs 2.5's 90, i.e. 1.8's extras are mostly the false ones (matches its 7.5% protein FDR)."))
+             "protein asymmetric — 1.8 reports 647 unique proteins vs 2.5's 90. Given 1.8's higher protein FDR (~7.5%), the "
+             "extra IDs are plausibly enriched for false positives, but confirming that needs per-protein truth labels (not done here)."))
 
     # ---- Stage 1: abundance ----
     S.append("<h2>6. Stage 1 — sensitivity &amp; ratio bias vs TRUE abundance</h2>")
     S.append("<p>Binning by the blueprint's true abundance (shared across engines) removes the "
-             "reported-intensity-scale confound. DIA-NN 2.5 detects as many or more low-abundance "
-             "precursors as 1.8 (top row) and is better-calibrated (bottom row) — confirming 2.5 is "
-             "<b>not</b> less sensitive despite the misleading reported-abundance view.</p>")
+             "reported-intensity-scale confound. In the low-abundance transition zone DIA-NN 2.5 "
+             "detects as many or more precursors as 1.8 (top row) and is better-calibrated (bottom "
+             "row) — so the reported-abundance view that made 2.5 <i>look</i> less sensitive is an "
+             "artifact; at matched true abundance 2.5 is not less sensitive.</p>")
     S.append(img("stage1_trueabund_ion_18_vs_25.png", "True-abundance: detection sensitivity (top) + ratio bias (bottom), 1.8 vs 2.5. Human flat = control."))
     S.append(img("stage1_ratiobias_ion_18_vs_25.png", "Ratio bias vs each engine's own reported abundance — within-engine diagnostic; 1.8 fans wider at low abundance."))
 
@@ -124,7 +134,9 @@ def build() -> str:
     S.append("<h2>7. Stage 2 — spike-in over REAL plasma (superimpose)</h2>")
     S.append("""<p>The simulated yeast+E.coli is overlaid on a real PYE-plasma <code>.d</code>
     (the actual plasma used for the mix). Contamination check: searching the plasma vs
-    human+yeast+E.coli finds only 0.4% YE (below 1% FDR) → references clean. YE intensity is
+    human+yeast+E.coli finds only ~0.4% yeast/E.coli — at the level expected from FDR-level
+    false IDs and with no coherent high-confidence YE population, so no meaningful carryover
+    was detected (low detectable contamination, not a proof of zero). YE intensity is
     calibrated (report-proxy) to sit at the real-PYE level relative to human:
     <b>yeast 0.40×, E. coli 0.63×</b> the human median (A/B oracle ratios preserved). Human is
     real background with no truth (<code>truth_scope=background_unknown</code>): scored
@@ -174,6 +186,7 @@ def build() -> str:
     </ul>""")
     S.append("<p><small>PlasmaBENCH · branch <code>plots-analysis-panels</code> · panels: "
              "P1 ratios, P3 sensitivity/bias, P5 FDR, P6 quant, ID-overlap · 85-check test suite.</small></p>")
+    S.append("</body></html>")
     return "\n".join(S)
 
 
