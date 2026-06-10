@@ -174,9 +174,16 @@ def build() -> str:
     S.append(table(["", "ion FDR", "ion recall", "protein FDR", "protein recall"],
                    [["DIA-NN 2.5", "0.83%", "62%", "0.94%", "90%"],
                     ["DIA-NN 1.8", "0.88%", "59%", "1.73%", "89%"]]))
-    S.append('<div class="key">On real plasma both engines sit ~0.8–0.9% at ion level; 1.8\'s protein '
-             'FDR (1.73%) is still above 2.5\'s (0.94%) but the gap is far smaller than Stage 1 '
-             '(7.5% vs 1.5%) — the dense background narrows the version difference.</div>')
+    S.append('<div class="caveat"><b>Scope — read FDR like-for-like.</b> Stage 2 scores FDR only '
+             'over the simulated <b>spike-in (YE)</b>: human is real plasma with no blueprint '
+             '(<code>background_unknown</code>), so human false discoveries are invisible to the '
+             'scorer. Stage 1\'s headline protein FDR (1.8 ~7.5%) is over <i>all</i> species and is '
+             '<b>~79% human</b> false groups — so it is NOT comparable to Stage 2. Restricting Stage 1 '
+             'to YE-only gives protein FDR <b>2.07% (1.8)</b>, essentially equal to Stage 2\'s 1.73%. '
+             '<b>So the spike-in FDR is consistent across blank-SIM and real-plasma</b> — DIA-NN is not '
+             '"better on real plasma"; we just cannot see the human-background errors there. The 7.5% '
+             'all-species figure remains a valid, separate statement about 1.8\'s human protein-inference '
+             'inflation.</div>')
     S.append(img("stage2fix_25_fdr.png", "DIA-NN 2.5 Stage-2 simulated-spike-in FDR (left) &amp; recall (right), corrected, human excluded."))
     S.append(img("stage2fix_18_fdr.png", "DIA-NN 1.8 Stage-2 simulated-spike-in FDR (left) &amp; recall (right) — protein FDR 1.73% vs 2.5's 0.94%; recall comparable."))
 
