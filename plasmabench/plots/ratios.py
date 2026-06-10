@@ -69,13 +69,22 @@ def _agg_func(aggregation: str):
 
 def build_ratio_table(obs: pd.DataFrame, level: str = "protein",
                       aggregation: str = "linear_mean", min_replicates: int = 1,
-                      q_value_max: float = 0.01, human_anchor: bool = True):
+                      q_value_max: float = 0.01, human_anchor: bool = True,
+                      protein_quant: str = "maxlfq"):
     """Per-feature ``log2(B/A)`` (canonical) + mean log2 abundance, per species.
 
     Returns ``(wide, anchor)`` where ``wide`` has one row per feature with
     ``species, log2_ba, log2_int`` and ``anchor`` is the human-median shift applied
     (0.0 if ``human_anchor`` is False).
+
+    ``protein_quant`` (level=='protein' only): ``"maxlfq"`` uses DIA-NN's PG.MaxLFQ
+    (carries the engine's cross-run normalization); ``"raw_sum"`` sums the raw
+    ``observed_intensity`` over the protein group — the normalization-free protein
+    quantity used when the benchmark is run on the raw quantity axis (so 1.8 and 2.5
+    agree at protein level too). See docs/finding-diann-1.8-vs-2.5-quant.md.
     """
+    if protein_quant not in ("maxlfq", "raw_sum"):
+        raise ValueError(f"protein_quant must be maxlfq|raw_sum, got {protein_quant!r}")
     df = obs.copy()
 
     # 4-level FDR filter (apply each q-column that is present and non-null).
@@ -89,8 +98,16 @@ def build_ratio_table(obs: pd.DataFrame, level: str = "protein",
 
     # Feature key per level (the unit whose A/B ratio we plot).
     if level == "protein":
-        df = df.dropna(subset=["protein_group", "pg_maxlfq"])
-        df = df[df["pg_maxlfq"] > 0]
+        if protein_quant == "maxlfq":
+            df = df.dropna(subset=["protein_group", "pg_maxlfq"])
+            df = df[df["pg_maxlfq"] > 0]
+        else:  # raw_sum: aggregate raw precursor observed_intensity over the group.
+            # Purpose is a normalization-free protein quantity for raw-vs-raw cross-engine
+            # comparison — NOT to reproduce MaxLFQ. Like maxlfq it sums only q-passing
+            # precursors, so both modes share the same precursor inclusion; they differ
+            # only in aggregation (raw sum vs MaxLFQ's normalized group quantity).
+            df = df.dropna(subset=["protein_group", "observed_intensity"])
+            df = df[df["observed_intensity"] > 0]
         df["feature"] = df["protein_group"]
     elif level in ("ion", "precursor"):  # precursor ion = modified sequence + charge
         df = df.dropna(subset=["observed_intensity"])
@@ -111,11 +128,15 @@ def build_ratio_table(obs: pd.DataFrame, level: str = "protein",
     feat_species = df.groupby("feature")["species"].agg(
         lambda s: s.iloc[0] if s.nunique() == 1 else None).dropna()
 
-    # Within a (run, feature): protein uses the precomputed PG.MaxLFQ (one per group);
-    # ion is already one row per precursor; peptide/peptidoform SUM precursor intensities.
-    if level == "protein":
+    # Within a (run, feature): protein uses PG.MaxLFQ (one per group) or, in raw_sum
+    # mode, the sum of raw precursor intensities; ion is already one row per precursor;
+    # peptide/peptidoform SUM precursor intensities.
+    if level == "protein" and protein_quant == "maxlfq":
         per_run = df.drop_duplicates(["run_id", "feature"])[
             ["sample", "run_id", "feature", "pg_maxlfq"]].rename(columns={"pg_maxlfq": "quantity"})
+    elif level == "protein":  # raw_sum
+        per_run = df.groupby(["sample", "run_id", "feature"], as_index=False)["observed_intensity"] \
+            .sum().rename(columns={"observed_intensity": "quantity"})
     elif level in ("ion", "precursor"):
         per_run = df[["sample", "run_id", "feature", "observed_intensity"]] \
             .rename(columns={"observed_intensity": "quantity"})

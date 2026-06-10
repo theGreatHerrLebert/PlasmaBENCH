@@ -30,19 +30,24 @@ def main() -> None:
     ap.add_argument("--report-b", required=True, type=Path)
     ap.add_argument("--label-b", default="B")
     ap.add_argument("--sim-dir", required=True, type=Path)
+    ap.add_argument("--sim-dir-b", type=Path, default=None,
+                    help="separate sim tree for report-b (cross-stage compare); default = --sim-dir")
     ap.add_argument("--level", default="ion",
                     choices=["ion", "precursor", "peptide", "modified_peptide"])
     ap.add_argument("--n-bins", type=int, default=10)
     ap.add_argument("--out", required=True, type=Path)
     args = ap.parse_args()
 
-    # truth is the SAME blueprint for both versions → load once (manifest from report A).
-    manifest = build_manifest(args.report_a, args.sim_dir, "s1")
-    truth = pd.concat([load_truth(r, manifest) for r in manifest.runs], ignore_index=True)
+    sim_b = args.sim_dir_b or args.sim_dir
+
+    def truth_for(report, sim_dir):
+        m = build_manifest(report, sim_dir, "s1")
+        return m, pd.concat([load_truth(r, m) for r in m.runs], ignore_index=True)
 
     tables = {}
-    for label, report in ((args.label_a, args.report_a), (args.label_b, args.report_b)):
-        m = build_manifest(report, args.sim_dir, "s1")
+    for label, report, sim_dir in ((args.label_a, args.report_a, args.sim_dir),
+                                    (args.label_b, args.report_b, sim_b)):
+        m, truth = truth_for(report, sim_dir)
         obs = load_observations(report, m)
         tables[label] = build_true_abundance(truth, obs, level=args.level, n_bins=args.n_bins)
 

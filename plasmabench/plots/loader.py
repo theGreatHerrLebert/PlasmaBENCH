@@ -26,6 +26,7 @@ from __future__ import annotations
 import re
 import sqlite3
 import sys
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -188,11 +189,18 @@ def load_truth(run: RunSpec, manifest: RunManifest, exclude_decoys: bool = True)
 
 
 def load_observations(report_path: str | Path, manifest: RunManifest,
-                      software: str = "DIA-NN", exclude_decoys: bool = True) -> pd.DataFrame:
+                      software: str = "DIA-NN", exclude_decoys: bool = True,
+                      quant_col: str | None = None) -> pd.DataFrame:
     """Build the ``observations`` table from a DIA-NN report (parquet or tsv).
 
     Every ``Run`` is resolved through the manifest (fails on an unknown run).
     Precursor key ``(sequence_modified, charge)`` per run is asserted unique.
+
+    ``quant_col`` overrides which DIA-NN column becomes ``observed_intensity``.
+    Default is RAW ``Precursor.Quantity`` (the benchmark standard — see the qcol
+    comment below and docs/finding-diann-1.8-vs-2.5-quant.md); pass
+    ``quant_col="Precursor.Normalised"`` for the engine's normalized quantity, or
+    ``"Ms1.Area"`` etc. Used by the quant-method diagnostics to compare bases.
     """
     report_path = Path(report_path)
     if report_path.suffix.lower() in (".parquet", ".pq"):
@@ -219,7 +227,29 @@ def load_observations(report_path: str | Path, manifest: RunManifest,
     df["species"] = df["protein_names"].map(assign_species)
     df["truth_scope"] = df["species"].map(manifest.scope_for)
 
-    qcol = "Precursor.Normalised" if "Precursor.Normalised" in df.columns else "Precursor.Quantity"
+    if quant_col is not None:
+        if quant_col not in df.columns:
+            raise ValueError(f"quant_col {quant_col!r} not in report columns")
+        qcol = quant_col
+    else:
+        # Benchmark standard = RAW Precursor.Quantity, not Precursor.Normalised.
+        # DIA-NN's cross-run normalization assumes most signal is unchanged between
+        # runs; on a deliberate spike-in with controlled (simulated) loading that
+        # assumption is false, so the .Normalised column injects large per-precursor
+        # A/B ratio variance + a compression bias — catastrophically so for 2.5
+        # (~7× wider ratio IQR than 1.8). Raw quantity isolates peak extraction from
+        # each engine's normalization choice and is the fair cross-engine basis.
+        # See docs/finding-diann-1.8-vs-2.5-quant.md. Override via quant_col= for the
+        # default-normalized view a user gets out-of-the-box.
+        if "Precursor.Quantity" in df.columns:
+            qcol = "Precursor.Quantity"
+        else:
+            qcol = "Precursor.Normalised"
+            warnings.warn(
+                "Precursor.Quantity absent — falling back to Precursor.Normalised; "
+                "ratios will carry the engine's cross-run normalization, NOT the raw "
+                "benchmark standard. Results are not directly comparable across engines.",
+                RuntimeWarning, stacklevel=2)
     df["observed_intensity"] = df[qcol].astype(float)
     df["pg_maxlfq"] = df.get("PG.MaxLFQ")
     df["q_value"] = df.get("Q.Value")

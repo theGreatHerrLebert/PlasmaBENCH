@@ -38,6 +38,8 @@ def main() -> None:
                     default="linear_mean")
     ap.add_argument("--min-replicates", type=int, default=1)
     ap.add_argument("--q-value-max", type=float, default=0.01)
+    ap.add_argument("--protein-quant", choices=["maxlfq", "raw_sum"], default="maxlfq",
+                    help="protein-level quantity: PG.MaxLFQ (normalized) or sum of raw precursors")
     ap.add_argument("--no-human-anchor", action="store_true")
     ap.add_argument("--out", required=True, type=Path)
     args = ap.parse_args()
@@ -49,7 +51,7 @@ def main() -> None:
     wide, anchor = R.build_ratio_table(
         obs, level=args.level, aggregation=args.aggregation,
         min_replicates=args.min_replicates, q_value_max=args.q_value_max,
-        human_anchor=not args.no_human_anchor,
+        human_anchor=not args.no_human_anchor, protein_quant=args.protein_quant,
     )
     summary = R.ratio_summary(wide, conv)
     print(f"{len(wide):,} {args.level}s quantified in both samples "

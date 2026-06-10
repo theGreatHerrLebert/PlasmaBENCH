@@ -14,6 +14,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -163,6 +164,13 @@ def test_ratio_table_recovers_oracle(o: pd.DataFrame) -> None:
     # 'precursor' is an alias for 'ion'
     check(len(R.build_ratio_table(o, level="precursor")[0]) == n["ion"],
           "precursor == ion alias")
+
+    # protein_quant="raw_sum" (raw Σ-precursor) also recovers the oracle on the fixture
+    wsum, _ = R.build_ratio_table(o, level="protein", protein_quant="raw_sum")
+    ssum = R.ratio_summary(wsum, R.A_OVER_B).set_index("species")
+    for sp in ("YEAST", "ECOLI"):
+        d = abs(ssum.loc[sp, "observed_log2"] - ssum.loc[sp, "expected_log2"])
+        check(d < 0.4, f"raw_sum {sp} observed within 0.4 log2 of expected ({d:.2f})")
 
 
 def test_fdr_math() -> None:
@@ -405,6 +413,35 @@ def test_tokens_no_pipe_split() -> None:
     check(F._tokens("A_YEAS8;B_YEAS8") == ["A_YEAS8", "B_YEAS8"], "_tokens splits on ';'")
 
 
+def test_protein_quant_raw_sum() -> None:
+    print("test_protein_quant_raw_sum")
+    # One yeast protein group, two precursors, A→B is 3× by raw intensity. PG.MaxLFQ is
+    # set INCONSISTENT with the raw sum (equal A/B) so the two modes give different answers:
+    # raw_sum must read the summed precursor intensities, maxlfq must read PG.MaxLFQ.
+    def rows(sample, inten):
+        return [dict(experiment="e", sample=sample, run_id=f"r{sample}",
+                     protein_names="ALPHA_YEAS8", protein_group="G1", pg_maxlfq=500.0,
+                     species="YEAST", sequence_modified=sm, charge=2,
+                     observed_intensity=inten, q_value=0.001)
+                for sm in ("PEPA", "PEPB")]
+    obs = pd.DataFrame(rows("A", 100.0) + rows("B", 300.0))
+    w_raw, _ = R.build_ratio_table(obs, level="protein", protein_quant="raw_sum",
+                                   human_anchor=False)
+    w_mlfq, _ = R.build_ratio_table(obs, level="protein", protein_quant="maxlfq",
+                                    human_anchor=False)
+    # raw_sum: log2(sum_B / sum_A) = log2(600/200) = +log2 3
+    check(abs(float(w_raw["log2_ba"].iloc[0]) - np.log2(3)) < 1e-9,
+          f"raw_sum sums precursors → log2(B/A)=+log2 3 ({float(w_raw['log2_ba'].iloc[0]):+.3f})")
+    # maxlfq: equal PG.MaxLFQ A/B → 0  (proves the modes read different columns)
+    check(abs(float(w_mlfq["log2_ba"].iloc[0])) < 1e-9,
+          "maxlfq reads PG.MaxLFQ (equal A/B → 0), not the raw sum")
+    try:
+        R.build_ratio_table(obs, level="protein", protein_quant="bogus")
+        check(False, "invalid protein_quant should raise ValueError")
+    except ValueError:
+        check(True, "invalid protein_quant raises ValueError")
+
+
 def run_synthetic() -> None:
     test_loader_truth_collapse_synthetic()
     test_obs_collapse_nullkey_and_dedup()
@@ -413,6 +450,7 @@ def run_synthetic() -> None:
     test_abundance_denominator_and_guard()
     test_render_key_collision_and_proteome_guard()
     test_tokens_no_pipe_split()
+    test_protein_quant_raw_sum()
 
 
 def test_abundance_curves(o: pd.DataFrame) -> None:
