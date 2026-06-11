@@ -7,7 +7,7 @@ IMAGE := ghcr.io/thegreatherrlebert/plasmabench-timsim:from-findings
 # .github/workflows/docker-publish.yml, replace the value below with the digest
 # the workflow logs (`Pushed image digest: ...`). Until then, `make pull-pinned`
 # fails loudly — use `make pull` to grab the convenience tag.
-IMAGE_DIGEST := ghcr.io/thegreatherrlebert/plasmabench-timsim@sha256:UNPINNED
+IMAGE_DIGEST := ghcr.io/thegreatherrlebert/plasmabench-timsim@sha256:527ee78f48cc0431c2abf7adf9807c4efe9c39c9b843fc351977c6a746a7be21
 
 .PHONY: help pull pull-pinned shell timsim-help compose-up compose-down venv venv-source submodules stage1-eval
 
