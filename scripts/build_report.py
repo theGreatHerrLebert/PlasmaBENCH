@@ -94,9 +94,11 @@ def build() -> str:
 
     # ---- Stage 1: quant ----
     S.append("<h2>3. Stage 1 — quant correlation vs truth (ground-truth only)</h2>")
-    S.append("<p>Simulated truth intensity vs recovered quantity, per species. Spearman 0.92–0.96 "
-             "(DIA-NN 2.5) — strong rank fidelity. The paper cannot produce this panel (no truth).</p>")
+    S.append("<p>Simulated truth intensity vs recovered quantity, per species. Both engines reach "
+             "Spearman ~0.93–0.96 — strong rank fidelity and essentially a tie (within-run abundance "
+             "ranking, the first axis of §8). The paper cannot produce this panel (no truth).</p>")
     S.append(img("stage1_diann25_quant.png", "DIA-NN 2.5 precursor quant correlation. ρ 0.92–0.96 per species."))
+    S.append(img("stage1_diann18_quant.png", "DIA-NN 1.8 precursor quant correlation. ρ 0.93–0.96 per species — comparable to 2.5."))
 
     # ---- Stage 1: FDR ----
     S.append("<h2>4. Stage 1 — empirical FDR / recall (ground-truth only)</h2>")

@@ -31,6 +31,8 @@ python scripts/plot_stage1_ratios.py --report "$R18_S1" --sim-dir "$S1" \
 echo "### §3  Stage-1 quant correlation"
 python scripts/plot_stage1_quant.py --report "$R25_S1" --sim-dir "$S1" \
   --experiment stage1-diann-2.5 --out "$FIG/stage1_diann25_quant.png"
+python scripts/plot_stage1_quant.py --report "$R18_S1" --sim-dir "$S1" \
+  --experiment stage1-diann-1.8 --out "$FIG/stage1_diann18_quant.png"
 
 echo "### §6  Stage-1 true-abundance + ratio-bias (1.8 vs 2.5)"
 python scripts/plot_true_abundance.py --report-a "$R18_S1" --label-a "DIA-NN 1.8" \
