@@ -90,6 +90,7 @@ def build() -> str:
     S.append(img("stage1_diann25_ratios_protein.png", "DIA-NN 2.5, protein level (raw Σ-precursor). Plasma orange, yeast blue, E. coli green."))
     S.append(img("stage1_diann25_ratios_ion.png", "DIA-NN 2.5, ion level — agrees with protein on raw quantity."))
     S.append(img("stage1_diann18_ratios_protein.png", "DIA-NN 1.8, protein level (raw Σ-precursor) — +1.02/−1.61, matches 2.5 on raw quantity."))
+    S.append(img("stage1_diann18_ratios_ion.png", "DIA-NN 1.8, ion level — +1.03/−1.63, matches 2.5 ion (+1.05/−1.66)."))
 
     # ---- Stage 1: quant ----
     S.append("<h2>3. Stage 1 — quant correlation vs truth (ground-truth only)</h2>")

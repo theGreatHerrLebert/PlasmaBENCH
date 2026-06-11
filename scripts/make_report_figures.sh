@@ -25,6 +25,8 @@ python scripts/plot_stage1_ratios.py --report "$R25_S1" --sim-dir "$S1" \
   --experiment stage1-diann-2.5 --level ion --out "$FIG/stage1_diann25_ratios_ion.png"
 python scripts/plot_stage1_ratios.py --report "$R18_S1" --sim-dir "$S1" \
   --experiment stage1-diann-1.8 --level protein --protein-quant raw_sum --out "$FIG/stage1_diann18_ratios_protein.png"
+python scripts/plot_stage1_ratios.py --report "$R18_S1" --sim-dir "$S1" \
+  --experiment stage1-diann-1.8 --level ion --out "$FIG/stage1_diann18_ratios_ion.png"
 
 echo "### §3  Stage-1 quant correlation"
 python scripts/plot_stage1_quant.py --report "$R25_S1" --sim-dir "$S1" \
