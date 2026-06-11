@@ -4,4 +4,4 @@
 [submodule "rustims"]
 	path = rustims
 	url = https://github.com/theGreatHerrLebert/rustims.git
-	branch = feature/simulate-from-findings
+	branch = main

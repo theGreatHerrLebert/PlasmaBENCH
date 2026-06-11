@@ -103,7 +103,7 @@ Configs reference container-fixed roots so they stay machine-portable: `/work`=r
 
 ## Submodules
 
-- **`rustims/`** — pinned to branch `feature/simulate-from-findings` (the from_findings 6-column contract is **not on main**, so upstream `rustims:latest` lacks it). Bumping the pin: see `docs/venv-setup.md`, and update the Makefile `IMAGE_DIGEST` in lockstep.
+- **`rustims/`** — tracks branch `main` (the from_findings 6-column contract **plus** the shared `reference_median` fix are now merged to main via PR #407; `rustims:latest` still differs, so PlasmaBENCH owns its own image). Currently pinned at `2748248`. Bumping the pin: see `docs/venv-setup.md`. The Makefile `IMAGE_DIGEST` is built+pushed automatically by `.github/workflows/docker-publish.yml` when a `rustims`-pointer change lands on `main`; read the pushed `sha256` from that run into `IMAGE_DIGEST` (until then it stays `UNPINNED` and `make pull-pinned` errors by design).
 - **`evident/`** — read-only reference; provides the claim-manifest validator and trust-pattern docs.
 
 Clone with `git clone --recurse-submodules` or `git submodule update --init --recursive` (`make submodules`).

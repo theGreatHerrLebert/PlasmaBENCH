@@ -7,10 +7,21 @@
 /simulations/**/seeds/
 /simulations/**/dia/
 /simulations/**/dda/
+# Stage-2 superimpose output trees (dia-fix interim, dia-refmed native-knob): multi-GB
+# .d + synthetic_data.db. Like stage-1 dia/, regenerate via render_configs.py + timsim.
+/simulations/**/dia-*/
 /simulations/**/*.d/
+/simulations/**/*.log
 /results/**
 !/results/**/.gitkeep
 !/simulations/**/results/.gitkeep
+
+# DIA-NN spectral-library + lock scratch dropped at repo root
+/lib.*
+*.speclib
+/plasmabench.lock
+# Codex review scratch dumps
+/plan.codex-review*.md
 
 # Python
 .venv/
