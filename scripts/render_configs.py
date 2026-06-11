@@ -66,7 +66,9 @@ def _toml_key(line: str) -> str | None:
 
 def render(base_toml: str, *, sample: str, seed_csv: str, save_path: str,
            experiment_name: str, reference_path: str | None = None,
-           superimpose: bool = False, gradient_length: str | None = None) -> str:
+           superimpose: bool = False, gradient_length: str | None = None,
+           findings_reference_median: float | None = None,
+           intensity_multiplier: float | None = None) -> str:
     """Fill the per-sample fields; optionally switch to the Stage-2 superimpose mode.
 
     Stage-2 (overlay simulated spike-in onto a real plasma .d) flips three keys:
@@ -74,6 +76,13 @@ def render(base_toml: str, *, sample: str, seed_csv: str, save_path: str,
     mutually exclusive), and repoints ``reference_path`` at the plasma run. The
     simulated signal then sits on the *real* human background — so human carries no
     blueprint truth (score with ``--human-scope background_unknown``).
+
+    ``findings_reference_median`` (+ a single ``intensity_multiplier`` shared across
+    samples) is the native, preferred way to preserve A/B ratios under from_findings:
+    both samples divide events by the SAME reference median instead of their own, so
+    median(A)/median(B) no longer distorts the cross-sample ratio (rustims PR #407).
+    This replaces the interim per-sample ``--intensity-multiplier`` work-around. Inject
+    both as top-level keys right after ``findings_path`` (config.X reads them directly).
     """
     out = base_toml.replace("SAMPLE_PLACEHOLDER", sample)
     new_lines = []
@@ -81,6 +90,14 @@ def render(base_toml: str, *, sample: str, seed_csv: str, save_path: str,
         key = _toml_key(line)
         if key == "findings_path":
             new_lines.append(f'findings_path   = "{seed_csv}"')
+            if findings_reference_median is not None:
+                new_lines.append(
+                    f'findings_reference_median = {findings_reference_median}'
+                    '   # shared denominator (both samples) → preserves A/B ratios (PR #407)')
+            if intensity_multiplier is not None:
+                new_lines.append(
+                    f'intensity_multiplier      = {intensity_multiplier}'
+                    '   # brightness calibration; SAME for A and B under shared reference median')
         elif key == "save_path":
             new_lines.append(f'save_path       = "{save_path}"')
         elif key == "experiment_name":
@@ -127,6 +144,13 @@ def main() -> None:
                     help="Repoint reference_path (the real plasma .d for --superimpose).")
     ap.add_argument("--gradient-length", default=None,
                     help="Override gradient_length to match the reference plasma .d span.")
+    ap.add_argument("--findings-reference-median", type=float, default=None,
+                    help="Native ratio-preserving knob: shared event-scaling median for ALL "
+                         "samples (sample A's median). Replaces the interim per-sample "
+                         "--intensity-multiplier work-around (rustims PR #407).")
+    ap.add_argument("--intensity-multiplier", type=float, default=None,
+                    help="Brightness calibration written into the config; with "
+                         "--findings-reference-median use ONE value for A and B.")
     args = ap.parse_args()
 
     repo_root = args.repo_root or Path(__file__).resolve().parents[1]
@@ -158,7 +182,9 @@ def main() -> None:
         text = render(base_text, sample=sample, seed_csv=seed_path,
                       save_path=save_path, experiment_name=experiment,
                       reference_path=reference_path, superimpose=args.superimpose,
-                      gradient_length=args.gradient_length)
+                      gradient_length=args.gradient_length,
+                      findings_reference_median=args.findings_reference_median,
+                      intensity_multiplier=args.intensity_multiplier)
         out_path = sample_dir / "config.toml"
         out_path.write_text(text, encoding="utf-8")
         print(f"wrote {out_path}")
