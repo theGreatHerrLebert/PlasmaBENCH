@@ -31,6 +31,20 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
+      # The image compiles rustims (polars, etc.) via maturin — the default
+      # ~14 GB free on ubuntu-latest runs out ("No space left on device").
+      # Reclaim ~25-30 GB by dropping preinstalled toolchains we don't use.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: false
+          swap-storage: false
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
