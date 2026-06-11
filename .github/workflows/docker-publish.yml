@@ -31,10 +31,16 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (with submodules)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          # Do NOT recurse all submodules: evident's nested submodule
+          # (evident/cases/cu-ims-primitives) is private/missing and aborts checkout.
+          # The image build only needs rustims, which we init explicitly below.
+          submodules: false
+
+      - name: Init rustims submodule (only)
+        run: git submodule update --init --recursive rustims
 
       - name: Resolve rustims SHA
         id: rustims
