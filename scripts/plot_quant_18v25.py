@@ -27,14 +27,18 @@ FIGDIR = Path("results/figures")
 STAGES = {
     "Stage 1\n(blank)": dict(sim="simulations/stage1/dia", exp="stage1", scope="simulated",
                              reps={"1.8": "results/diann-1.8-AB-v3/report.tsv",
-                                   "2.5": "results/diann-2.5-AB-v3/report.parquet"}),
+                                   "2.5": "results/diann-2.5-AB-v3/report.parquet",
+                                   "2.6": "results/diann-2.6-AB/report.parquet"}),
     "Stage 2\n(real plasma)": dict(sim="simulations/stage2/dia-fix", exp="stage2",
                                    scope="background_unknown",
                                    reps={"1.8": "results/diann-1.8-s2fix-r080/report.tsv",
-                                         "2.5": "results/diann-2.5-s2fix-r080/report.parquet"}),
+                                         "2.5": "results/diann-2.5-s2fix-r080/report.parquet",
+                                         "2.6": "results/diann-2.6-s2fix-r080/report.parquet"}),
 }
 QUANT_COLS = ["Precursor.Normalised", "Precursor.Quantity", "Ms1.Normalised", "Ms1.Area"]
 SPECIES = ["YEAST", "ECOLI"]
+ENGINES = ["1.8", "2.5", "2.6"]
+COLORS = {"1.8": "#4C72B0", "2.5": "#C44E52", "2.6": "#DD8452"}
 
 
 def iqr(x):
@@ -63,20 +67,20 @@ def panel_a():
     stages = list(STAGES)
     for ax, stage in zip(axes, stages):
         sub = df[df["stage"] == stage]
-        x = np.arange(len(SPECIES)); w = 0.36
-        for i, eng in enumerate(["1.8", "2.5"]):
+        x = np.arange(len(SPECIES)); w = 0.27
+        for i, eng in enumerate(ENGINES):
             vals = [sub[(sub.engine == eng) & (sub.species == sp)]["iqr"].iloc[0] for sp in SPECIES]
-            bars = ax.bar(x + (i - 0.5) * w, vals, w,
-                          label=f"DIA-NN {eng}", color="#4C72B0" if eng == "1.8" else "#C44E52")
+            bars = ax.bar(x + (i - (len(ENGINES) - 1) / 2) * w, vals, w,
+                          label=f"DIA-NN {eng}", color=COLORS[eng])
             for b, v in zip(bars, vals):
                 ax.text(b.get_x() + b.get_width() / 2, v + 0.02, f"{v:.2f}",
-                        ha="center", va="bottom", fontsize=8)
+                        ha="center", va="bottom", fontsize=7)
         ax.set_title(stage.replace("\n", " "), fontsize=10)
         ax.set_xticks(x); ax.set_xticklabels([s.title() for s in SPECIES])
         ax.axhline(0, color="0.6", lw=0.6)
     axes[0].set_ylabel("A/B ratio IQR  (log2; lower = tighter)")
     axes[0].legend(frameon=False, fontsize=9)
-    fig.suptitle("A/B ratio precision — raw Precursor.Quantity (benchmark standard): 1.8 ≈ 2.5",
+    fig.suptitle("A/B ratio precision — raw Precursor.Quantity (benchmark standard): 1.8 ≈ 2.5 ≈ 2.6",
                  fontsize=11)
     fig.tight_layout()
     out = FIGDIR / "quant_18v25_iqr.png"
@@ -98,24 +102,24 @@ def panel_b():
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.4), sharey=True)
     cols = [c for c in QUANT_COLS if c in set(df["quant"])]
-    x = np.arange(len(cols)); w = 0.36
+    x = np.arange(len(cols)); w = 0.27
     for ax, sp in zip(axes, SPECIES):
-        for i, eng in enumerate(["1.8", "2.5"]):
+        for i, eng in enumerate(ENGINES):
             vals = [df[(df.engine == eng) & (df.quant == qc) & (df.species == sp)]["iqr"]
                     for qc in cols]
             vals = [v.iloc[0] if len(v) else np.nan for v in vals]
-            ax.bar(x + (i - 0.5) * w, vals, w, label=f"DIA-NN {eng}",
-                   color="#4C72B0" if eng == "1.8" else "#C44E52")
-            for xi, v in zip(x + (i - 0.5) * w, vals):
+            off = (i - (len(ENGINES) - 1) / 2) * w
+            ax.bar(x + off, vals, w, label=f"DIA-NN {eng}", color=COLORS[eng])
+            for xi, v in zip(x + off, vals):
                 if not np.isnan(v):
-                    ax.text(xi, v + 0.02, f"{v:.2f}", ha="center", va="bottom", fontsize=7.5)
+                    ax.text(xi, v + 0.02, f"{v:.2f}", ha="center", va="bottom", fontsize=6.5)
         ax.set_title(sp.title(), fontsize=10)
         ax.set_xticks(x)
         ax.set_xticklabels([c.replace(".", ".\n") for c in cols], fontsize=8)
     axes[0].set_ylabel("A/B ratio IQR  (log2; lower = tighter)")
     axes[0].legend(frameon=False, fontsize=9)
-    fig.suptitle("Stage 2: 2.5's spread is the cross-run NORMALIZATION "
-                 "(raw Quantity / Ms1.Area recover 1.8 levels)", fontsize=10.5)
+    fig.suptitle("Stage 2: the cross-run NORMALIZATION spread (2.5 AND 2.6, not 1.8) "
+                 "— raw Quantity / Ms1.Area recover 1.8 levels", fontsize=10)
     fig.tight_layout()
     out = FIGDIR / "quant_18v25_normalization.png"
     fig.savefig(out, dpi=130, bbox_inches="tight"); plt.close(fig)
