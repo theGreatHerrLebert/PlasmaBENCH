@@ -111,11 +111,15 @@ def build() -> str:
              'abundance 2.5 detects as many precursors yet is better-calibrated. This independently '
              'reproduces the known "1.8 FDR control is poor" observation. Protein FDR is group-credit; '
              '"any-member" / "strict" definitions reported separately.</div>')
-    S.append(table(["level", "1.8 FDR", "2.5 FDR", "1.8 / 2.5 recall"],
-                   [["ion", "1.9%", "0.49%", "66% / 67%"],
-                    ["peptide", "2.0%", "0.51%", "67% / 70%"],
-                    ["protein (group-credit: any / strict)", "7.5% / 7.8%", "1.44% / 1.65%", "90% / 88.6%"]]))
+    S.append(table(["level", "1.8 FDR", "2.5 FDR", "2.6 FDR", "recall 1.8 / 2.5 / 2.6"],
+                   [["ion", "1.9%", "0.49%", "0.57%", "66% / 67% / 67%"],
+                    ["peptide", "2.0%", "0.51%", "0.59%", "67% / 70% / 69%"],
+                    ["protein (group-credit: any / strict)", "7.5% / 7.8%", "1.44% / 1.65%", "1.42% / 1.63%", "90% / 88.6% / 88%"]]))
+    S.append('<div class="key">DIA-NN <b>2.6 ≈ 2.5</b> on FDR/recall too — well-calibrated '
+             '(ion ~0.57%, protein group-credit ~1.4%) and far below 1.8\'s 1.9%/7.5%. So 2.6 inherits '
+             '2.5\'s better FDR control along with its quant-normalization behaviour (§8).</div>')
     S.append(img("stage1_diann25_fdr_blanksub.png", "DIA-NN 2.5 FDR/TPR, blank-subtracted. Protein group-credit FDR over the 1% line (inference inflation)."))
+    S.append(img("stage1_diann26_fdr_blanksub.png", "DIA-NN 2.6 FDR/TPR, blank-subtracted — matches 2.5 (ion ~0.57%, protein ~1.4%)."))
     S.append(img("stage1_diann18_fdr.png", "DIA-NN 1.8 — FDR far over 1% (ion ~1.9%, protein group-credit ~7.5%)."))
     S.append("<p><small>Blank subtraction: the noise-source blank yields 1,039 IDs (1,035 human, "
              "4 yeast); subtracting blank-explained IDs from the FP side barely moves FDR "
@@ -183,6 +187,7 @@ def build() -> str:
     S.append("<h3>7c. FDR / recall on real plasma (simulated spike-in)</h3>")
     S.append(table(["", "ion FDR", "ion recall", "protein FDR", "protein recall"],
                    [["DIA-NN 2.5", "0.83%", "62%", "0.94%", "90%"],
+                    ["DIA-NN 2.6", "0.81%", "63%", "0.94%", "90%"],
                     ["DIA-NN 1.8", "0.88%", "59%", "1.73%", "89%"]]))
     S.append('<div class="caveat"><b>Scope — read FDR like-for-like.</b> Stage 2 scores FDR only '
              'over the simulated <b>spike-in (YE)</b>: human is real plasma with no blueprint '
@@ -195,6 +200,7 @@ def build() -> str:
              'all-species figure remains a valid, separate statement about 1.8\'s human protein-inference '
              'inflation.</div>')
     S.append(img("stage2fix_25_fdr.png", "DIA-NN 2.5 Stage-2 simulated-spike-in FDR (left) &amp; recall (right), corrected, human excluded."))
+    S.append(img("stage2fix_26_fdr.png", "DIA-NN 2.6 Stage-2 simulated-spike-in FDR (left) &amp; recall (right) — matches 2.5 (ion 0.81%, protein 0.94%)."))
     S.append(img("stage2fix_18_fdr.png", "DIA-NN 1.8 Stage-2 simulated-spike-in FDR (left) &amp; recall (right) — protein FDR 1.73% vs 2.5's 0.94%; recall comparable."))
 
     S.append("<h3>7d. Bias &amp; sensitivity vs TRUE abundance — blank vs real plasma</h3>")
