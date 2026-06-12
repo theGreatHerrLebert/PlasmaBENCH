@@ -27,7 +27,8 @@ VER="$1"; FASTA="$2"; OUT_DIR="$3"; shift 3
 case "$VER" in
   1.8|1.8.1) BIN="$REPO_ROOT/tools/diann/1.8.1/diann-1.8.1" ;;
   2.5|2.5.0) BIN="$REPO_ROOT/tools/diann/2.5.0/diann-2.5.0/diann-linux" ;;
-  *) echo "unknown DIA-NN version '$VER' (use 1.8 or 2.5)" >&2; exit 1 ;;
+  2.6|2.6.0) BIN="$REPO_ROOT/tools/diann/2.6.0/diann-2.6.0/diann-linux" ;;
+  *) echo "unknown DIA-NN version '$VER' (use 1.8, 2.5 or 2.6)" >&2; exit 1 ;;
 esac
 [[ -x "$BIN" ]] || { echo "missing/!exec $BIN — run: bash scripts/get_diann.sh" >&2; exit 2; }
 [[ -e "$FASTA" ]] || { echo "FASTA not found: $FASTA (TODO: plasma+yeast+ecoli reference)" >&2; exit 2; }

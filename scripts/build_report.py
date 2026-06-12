@@ -86,7 +86,9 @@ def build() -> str:
              'from <b>raw precursor intensity</b> (<code>Precursor.Quantity</code>; protein = sum '
              'over the group), not DIA-NN\'s normalized <code>PG.MaxLFQ</code>/'
              '<code>Precursor.Normalised</code>. With MaxLFQ the protein rollup would read +0.91 '
-             '(compressed) — and for 2.5 the compression is severe. <b>Why we use raw: §8.</b></div>')
+             '(compressed) — and for 2.5 the compression is severe. <b>Why we use raw: §8.</b> '
+             '<i>DIA-NN 2.6, run through the identical grid, matches 2.5 on the raw axis '
+             '(protein +1.03/−1.63, ion +1.05/−1.65) — see §8.</i></div>')
     S.append(img("stage1_diann25_ratios_protein.png", "DIA-NN 2.5, protein level (raw Σ-precursor). Plasma orange, yeast blue, E. coli green."))
     S.append(img("stage1_diann25_ratios_ion.png", "DIA-NN 2.5, ion level — agrees with protein on raw quantity."))
     S.append(img("stage1_diann18_ratios_protein.png", "DIA-NN 1.8, protein level (raw Σ-precursor) — +1.02/−1.61, matches 2.5 on raw quantity."))
@@ -94,9 +96,10 @@ def build() -> str:
 
     # ---- Stage 1: quant ----
     S.append("<h2>3. Stage 1 — quant correlation vs truth (ground-truth only)</h2>")
-    S.append("<p>Simulated truth intensity vs recovered quantity, per species. Both engines reach "
-             "Spearman ~0.93–0.96 — strong rank fidelity and essentially a tie (within-run abundance "
-             "ranking, the first axis of §8). The paper cannot produce this panel (no truth).</p>")
+    S.append("<p>Simulated truth intensity vs recovered quantity, per species. All three versions "
+             "(1.8/2.5/2.6) reach Spearman ~0.92–0.96 — strong rank fidelity and essentially a tie "
+             "(within-run abundance ranking, the first axis of §8). The paper cannot produce this "
+             "panel (no truth).</p>")
     S.append(img("stage1_diann25_quant.png", "DIA-NN 2.5 precursor quant correlation. ρ 0.92–0.96 per species."))
     S.append(img("stage1_diann18_quant.png", "DIA-NN 1.8 precursor quant correlation. ρ 0.93–0.96 per species — comparable to 2.5."))
 
@@ -198,44 +201,48 @@ def build() -> str:
     S.append(img("stage1_vs_stage2fix_trueabund.png", "Stage 1 (blank) vs Stage 2 (real plasma, corrected truth) — ratio bias & detection sensitivity vs true abundance. Human panel Stage-2-empty (no truth)."))
 
     # ---- 1.8 vs 2.5 quant ----
-    S.append("<h2>8. DIA-NN 1.8 vs 2.5 quant — it's the cross-run normalization</h2>")
-    S.append("""<p>2.5 is the more sensitive identifier (why we use it for the one-shot blank/plasma
-    background ID), but its <i>quantitative ratios</i> looked far noisier than 1.8 throughout the
-    drafts above. Splitting "quant" into two axes and controlling the confounds an independent
-    review raised (precursor-set coverage, human-anchoring) isolates the cause cleanly.</p>""")
-    S.append(table(["axis", "metric", "DIA-NN 1.8", "DIA-NN 2.5", "verdict"],
-                   [["within-run abundance", "Spearman ρ (truth)", "0.93–0.94", "0.92–0.93",
-                     "≈ tie (2.5 marginally lower)"],
-                    ["cross-sample ratio precision", "IQR log₂(A/B), default Normalised",
-                     "0.19–0.35", "1.6 (Stage 2)", "1.8 far tighter"]]))
-    S.append('<div class="key"><b>The spread is DIA-NN 2.5\'s cross-run normalization, and it is '
+    S.append("<h2>8. DIA-NN 1.8 vs 2.5 vs 2.6 quant — the cross-run normalization (2.6 did not fix it)</h2>")
+    S.append("""<p>2.5/2.6 are the more sensitive identifiers (why we use them for the one-shot
+    blank/plasma background ID), but their <i>quantitative ratios</i> looked far noisier than 1.8
+    throughout the drafts above. Splitting "quant" into two axes and controlling the confounds an
+    independent review raised (precursor-set coverage, human-anchoring) isolates the cause cleanly.
+    <b>DIA-NN 2.6 (released 2026-06-10) was run through the identical grid</b> (same SIM <code>.d</code>s,
+    same unified <code>diann-pye1.cfg</code> — only the binary differs) as a third point on the
+    version axis.</p>""")
+    S.append(table(["axis", "metric", "DIA-NN 1.8", "DIA-NN 2.5", "DIA-NN 2.6", "verdict"],
+                   [["within-run abundance", "Spearman ρ (truth)", "0.93–0.94", "0.92–0.93", "0.92–0.93",
+                     "≈ tie across all three"],
+                    ["cross-sample ratio precision", "IQR log₂(A/B), default Normalised, Stage 2",
+                     "0.19–0.35", "1.6", "1.3–1.4", "1.8 far tighter; 2.6 ≈ 2.5"]]))
+    S.append('<div class="key"><b>The spread is the 2.5/2.6 cross-run normalization, and it is '
              'selectable.</b> Re-reading the <i>same</i> report under different quantity columns '
              '(no re-search): on Stage 2, 2.5\'s ion-level ratio IQR is 1.64 with '
              '<code>Precursor.Normalised</code> but <b>0.23 with raw <code>Precursor.Quantity</code></b> '
-             '(and 0.22 with <code>Ms1.Area</code>) — landing next to 1.8\'s 0.18. This is not a '
-             'coverage artifact: <code>Precursor.Normalised</code> is a strictly-positive rescale of '
-             '<code>Precursor.Quantity</code> (identical precursor support), and on the common '
-             'feature set quantified under <i>every</i> column the IQRs are unchanged (1.64 vs 0.23). '
-             'The same switch '
-             'removes a <b>compression bias</b> (2.5 Stage-2 ratios pulled ~0.2–0.34 log₂ toward 1:1). '
-             'It is <i>not</i> MaxLFQ (a protein rollup — our endpoint is precursor-level) and '
-             '<i>not</i> the QuantUMS peak extraction (raw is fine): both <code>.Normalised</code> '
-             'columns are bad, both raw columns are fine. 1.8\'s normalization is benign (0.19→0.16); '
-             '2.5\'s is a ~7× regression (1.64→0.23). The benchmark therefore quantifies from raw '
-             'precursor intensity everywhere (§2/§7), which is why 1.8 and 2.5 now agree above.</div>')
-    S.append(table(["DIA-NN 2.5 quantity column (Stage 2)", "E. coli IQR", "yeast IQR", "E. coli bias"],
-                   [["Precursor.Normalised (default)", "1.64", "1.61", "−0.34"],
-                    ["Precursor.Quantity (raw)", "0.23", "0.30", "−0.02"],
-                    ["Ms1.Area (raw)", "0.22", "0.31", "+0.03"],
-                    ["— 1.8, Precursor.Quantity (raw)", "0.16", "0.21", "−0.02"]]))
-    S.append(img("quant_18v25_iqr.png", "A/B ratio precision (IQR) on raw Precursor.Quantity — the benchmark standard. 1.8 ≈ 2.5 in both stages."))
-    S.append(img("quant_18v25_normalization.png", "Mechanism: IQR by quantity column, Stage 2. 2.5's spread lives entirely in the .Normalised columns; raw Quantity / Ms1.Area recover 1.8 levels."))
+             '(and 0.22 with <code>Ms1.Area</code>) — landing next to 1.8\'s 0.18; <b>2.6 behaves the '
+             'same</b> (1.39 → 0.24). This is not a coverage artifact: <code>Precursor.Normalised</code> '
+             'is a strictly-positive rescale of <code>Precursor.Quantity</code> (identical precursor '
+             'support), and on the common feature set quantified under <i>every</i> column the IQRs are '
+             'unchanged. The same switch removes a <b>compression bias</b> (2.5/2.6 Stage-2 ratios pulled '
+             '~0.1–0.34 log₂ toward 1:1). It is <i>not</i> MaxLFQ (a protein rollup — our endpoint is '
+             'precursor-level) and <i>not</i> the QuantUMS peak extraction (raw is fine): both '
+             '<code>.Normalised</code> columns are bad, both raw columns are fine. 1.8\'s normalization '
+             'is benign (0.19→0.16); 2.5\'s and 2.6\'s are ~6–7× regressions. <b>2.6 did not fix this</b> '
+             '(marginally milder on real plasma than 2.5, but the same behavior). The benchmark therefore '
+             'quantifies from raw precursor intensity everywhere (§2/§7), which is why all three versions '
+             'agree above.</div>')
+    S.append(table(["quantity column (Stage 2)", "1.8 ecoli/yeast IQR", "2.5 ecoli/yeast IQR", "2.6 ecoli/yeast IQR"],
+                   [["Precursor.Normalised (default)", "0.19 / 0.35", "1.64 / 1.61", "1.39 / 1.27"],
+                    ["Precursor.Quantity (raw)", "0.16 / 0.21", "0.23 / 0.30", "0.24 / 0.29"],
+                    ["Ms1.Area (raw)", "0.15 / 0.21", "0.22 / 0.31", "0.22 / 0.32"]]))
+    S.append(img("quant_18v25_iqr.png", "A/B ratio precision (IQR) on raw Precursor.Quantity — the benchmark standard. 1.8 ≈ 2.5 ≈ 2.6 in both stages."))
+    S.append(img("quant_18v25_normalization.png", "Mechanism: IQR by quantity column, Stage 2. The spread lives in the .Normalised columns for BOTH 2.5 and 2.6 (not 1.8); raw Quantity / Ms1.Area recover 1.8 levels."))
     S.append("""<p><small>Accuracy companion (residual vs blueprint truth, human-anchored): on raw
-    quantity 1.8 is accurate and precise everywhere (bias ≤ 0.05 log₂, median|error| ≈ 0.09–0.12);
-    2.5 on the default Normalised column is both noisier <i>and</i> ratio-compressed on real plasma.
-    Practical knobs: score 2.5 from <code>Precursor.Quantity</code> (free, no re-search;
-    <code>load_observations(quant_col=…)</code>) or re-run 2.5 with <code>--no-norm</code>. Full
-    write-up + reproduction: <code>docs/finding-diann-1.8-vs-2.5-quant.md</code>,
+    quantity all three versions are accurate and precise (bias ≤ 0.05 log₂, median|error| ≈ 0.09–0.13);
+    2.5 and 2.6 on the default Normalised column are both noisier <i>and</i> ratio-compressed on real
+    plasma. Practical knobs: score from <code>Precursor.Quantity</code> (free, no re-search;
+    <code>load_observations(quant_col=…)</code>) or re-run with <code>--no-norm</code>. <b>Version-axis
+    takeaway: 2.6 ≈ 2.5 on quant — the normalization regression carries forward.</b> Full write-up +
+    reproduction: <code>docs/finding-diann-1.8-vs-2.5-quant.md</code>,
     <code>scripts/diag_quant_{iqr,residual,method}.py</code>.</small></p>""")
 
     # ---- caveats ----
