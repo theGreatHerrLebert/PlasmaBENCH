@@ -38,3 +38,148 @@ claims:
       - Validation theater — sweeps without a pre-declared decision rule produce volume but not signal.
       - Convention gaps between tools (FDR, mass tolerance, modifications) misattribute disagreement to method rather than configuration. Document untunable parameters in configs/<tool>/NOTES.md.
       - Ratio leakage — a peptide whose organism is misassigned pollutes two species' ratio distributions at once; the species map must be audited before scoring.
+
+  - id: plasmabench-stage2-superimpose-truth
+    title: Stage 2 spike-in ratios on real plasma recover nominal against TimSim truth
+    case: docs/claims-audit.md
+    source: simulations/stage2
+    tier: research
+    trust_strategy:
+      - validation
+    pattern: evident/patterns/README.md#simulation-based-validation
+    # as_stated (PR #46 discipline): report.html §7 / docs/finding-ratio-distortion.md
+    claim: >
+      For the PYE1 yeast+E.coli spike-in simulated by TimSim from_findings and
+      superimposed on a real PYE plasma .d (human = real background, no blueprint),
+      the recovered A/B ratios match the TimSim blueprint at nominal — yeast B/A ≈ 3.0,
+      E. coli B/A ≈ 0.5 — at protein and ion level on raw Precursor.Quantity, on both
+      reference-plasma backgrounds (r080, r081), AFTER correcting the from_findings
+      per-sample-median normalization that had scaled every cross-sample ratio by
+      median(A)/median(B) ≈ 0.7 (fixed upstream via rustims PR #407, shared
+      reference_median; sim-QC confirms blueprint B/A back to nominal). Human carries
+      no blueprint truth, so FDR/recall are scored over the simulated spike-in only.
+    evidence:
+      oracle:
+        - TimSim blueprint (per sample, Stage 2 corrected re-sim)
+        - Known PYE1 spike-in ratios (yeast 3.0, E. coli 0.5)
+      tolerance: Blueprint B/A within ~5% of nominal (sim-QC gate); ratio panels human-anchored.
+      command: python scripts/plot_stage1_ratios.py --report <stage2 report> --protein-quant raw_sum ...
+      artifact: results/figures/stage2fix_{18,25}_ratios_protein.png
+    assumptions:
+      - The interim per-sample intensity_multiplier (and now the native findings_reference_median) cancels the per-sample-median distortion; sim-QC blueprint A/B ≈ nominal is the gate.
+      - Superimposing simulated signal onto a real .d does not reproduce ion suppression / fill-time / detector saturation — it tests the dense-background + DIA-NN-processing contribution only.
+    failure_modes:
+      - Scoring against nominal instead of the (possibly distorted) blueprint masks a simulator contract violation; report both nominal recovery and sim-QC of the blueprint itself.
+      - Same-background A/B pairing gives a perfect human anchor but may amplify ratio distortion vs real separate injections.
+
+  - id: plasmabench-diann-crossrun-normalization
+    title: DIA-NN 2.5/2.6 cross-run normalization inflates A/B ratio spread; raw recovers it
+    case: docs/finding-diann-1.8-vs-2.5-quant.md
+    source: plasmabench/plots
+    tier: research
+    trust_strategy:
+      - validation
+      - understanding
+    pattern: evident/patterns/README.md#cross-tool-agreement
+    # as_stated (PR #46 discipline): report.html §8
+    claim: >
+      On the PYE1 A/B spike-in (SIM and real), DIA-NN 2.5 and 2.6's cross-run
+      normalization — the Precursor.Normalised column, and PG.MaxLFQ which is built on
+      it — inflates the per-precursor log2(A/B) ratio dispersion (IQR) by roughly 2×
+      (blank Stage 1) to ~9× (real-plasma Stage 2) relative to DIA-NN 1.8, and reading
+      raw Precursor.Quantity (or Ms1.Area) instead recovers 1.8-level precision. The
+      inflation lives in the normalization step, not the MaxLFQ protein rollup (the
+      endpoint is precursor-level) nor the QuantUMS peak extraction (both raw columns
+      are fine, both .Normalised columns are bad), and it persists on the
+      shared-precursor intersection (identical ions) and on the common-column feature
+      set — so it is not a coverage or anchoring artifact. DIA-NN 2.6 did not fix it.
+      The benchmark therefore quantifies from raw precursor intensity throughout.
+    evidence:
+      oracle:
+        - TimSim blueprint truth ratio (per precursor) for the residual-vs-truth control
+        - Cross-engine comparison DIA-NN 1.8 vs 2.5 vs 2.6 under identical search settings
+      tolerance: Ratio IQR and residual-vs-truth reported per species; control = shared-precursor + common-column invariance.
+      command: python scripts/diag_quant_method.py --report <report> ...
+      artifact: results/figures/quant_18v25_normalization.png
+    assumptions:
+      - The unified diann-pye1.cfg differs across versions only in the binary, so a 1.8/2.5/2.6 difference at fixed raw quantity is an engine property.
+      - Precursor.Normalised is a strictly-positive rescale of Precursor.Quantity (identical support), so the comparison is on the same precursors.
+    failure_modes:
+      - Comparing engines on .Normalised (the out-of-the-box default) is benign for 1.8 but penalizes 2.x; the apples-to-apples basis is raw quantity for all engines.
+      - IQR is precision-only; report residual-vs-truth (bias + spread) so a tightly-but-wrongly-centered engine cannot hide.
+
+  - id: plasmabench-real-vs-sim-validation
+    title: TimSim PYE1 is validated against real experimental data except a low-input gap
+    case: docs/claims-audit.md
+    source: plasmabench/plots
+    tier: research
+    trust_strategy:
+      - validation
+    pattern: evident/patterns/README.md#layered-evaluation-against-simulated-and-real-references
+    # as_stated (PR #46 discipline): report.html §9 / docs/timsim-lowinput-noise-floor.md
+    claim: >
+      Searched with the identical unified config (only the DIA-NN binary differs),
+      TimSim-simulated PYE1 reproduces the real experimental G PYE1 A/B ratio behaviour
+      at moderate-to-high abundance and the cross-version differences — our unified
+      2.5/2.6 reproduce the real-data global ratios (E. coli +0.89–0.90, yeast
+      −1.32–1.33 in log2 A/B) and the ~23–25% precursor-yield gain of 2.x over 1.8 —
+      EXCEPT at low abundance, where the simulation spuriously OVER-separates the
+      spike-in fold change (E. coli ≈ +1.4–1.8, yeast ≈ −2.3–2.4 in the lowest
+      reported-abundance octile) while matched single-A-vs-single-B real data stays
+      flat (≈ +0.95 / −1.40 at every octile). The divergence is engine-independent
+      (1.8/2.5/2.6) and on both blank and real-plasma backgrounds; the human channel
+      is the flat negative control. Promotion rule: the simulated track is validated
+      for ratio recovery at moderate-to-high abundance; the low-abundance regime is
+      held at experimental (not validated) pending the simulator fix.
+    evidence:
+      oracle:
+        - Real experimental G PYE1 runs (Ute, 6×A + 6×B, Slot2-11/12), as the real reference
+        - Known PYE1 nominal spike-in ratios (the simulated-track truth)
+      tolerance: Per-species ratio-vs-abundance shape compared real vs SIM, matched 1-vs-1 structure, raw quantity, human-anchored.
+      command: python scripts/plot_real_vs_sim_compression.py
+      artifact: results/figures/real_vs_sim_compression.png
+    assumptions:
+      - Real and SIM must be compared at matched replicate structure (1-vs-1); averaging the 6 real replicates manufactures apparent low-abundance compression (a confound corrected after Codex review).
+      - The reported-abundance octile is a within-dataset rank, not a matched absolute input across datasets with different intensity scales.
+    failure_modes:
+      - Replicate-count asymmetry (6×6 real vs 1×1 SIM) can manufacture an abundance-dependent ratio trend; match the structure.
+      - Complete-case selection near the detection limit can bias low-octile ratios; controlled here only by the same-pipeline real-vs-SIM comparison.
+
+  - id: plasmabench-lowinput-overseparation
+    title: SIM low-input over-separation is sub-1.0 ion-count collapse (fix proposed, unverified)
+    case: docs/timsim-lowinput-noise-floor.md
+    source: rustims/rustdf/src/sim
+    tier: research
+    trust_strategy:
+      - validation
+      - understanding
+    pattern: evident/patterns/README.md#layered-evaluation-against-simulated-and-real-references
+    # as_stated (PR #46 discipline): report.html §9a / docs/timsim-lowinput-noise-floor.md
+    claim: >
+      The TimSim low-abundance ratio over-separation is caused by under-quantification
+      of the LOWER-intensity member of each A/B pair: decomposing into per-member quant
+      recovery log2(observed/truth) vs TRUE (blueprint) abundance, the higher member is
+      recovered accurately at all abundances while the lower member is under-quantified
+      at low abundance, and the higher-minus-lower gap equals the over-separation to the
+      decimal and is member-symmetric. The mechanism (read from the rustims rendering
+      path, Codex-reviewed) is deterministic: integer event truncation with a 1-event
+      floor (load_findings), deterministic multidimensional dilution, and a hard < 1.0
+      per-pixel intensity threshold + rounding (precursor.rs/dia.rs) with no Poisson/
+      count sampling — so the dimmer member loses proportionally more sub-unit
+      contributions. The real-data noise / superimpose is injected AFTER that threshold
+      (assemble_frames) and therefore cannot restore the erased signal (it only adds
+      interfering peaks → mild compression), which is why adding real-data noise did not
+      help. A fix — a per-pixel count model before the 1.0 filter, for DIA MS2 — is
+      PROPOSED but NOT YET VERIFIED (no after-fix simulation scored against this target).
+    evidence:
+      oracle:
+        - TimSim blueprint truth intensity (per member, per precursor)
+        - rustims rendering source (load_findings.py, precursor.rs, dia.rs, assemble_frames.py)
+      tolerance: Per-member recovery curves vs true-abundance octile; the higher-minus-lower gap reproduces the measured over-separation.
+      command: python scripts/plot_lowabund_underquant.py
+      artifact: results/figures/sim_lowabund_underquant.png
+    assumptions:
+      - The diagnosis localises the cause to TimSim rendering + DIA-NN quant of low-count synthetic peaks; it does not separate rendering from quant beyond what truth-vs-observed shows.
+    failure_modes:
+      - ABSENT (looked for, not yet produced) — after-fix evidence:  an after-fix SIM re-run scored against the same per-member-recovery target. Until it exists, the fix is proposed, not validated.
+      - The proposed fix must land in the Rust renderer before the 1.0 filter; adding events in load_findings would corrupt blueprint truth, and a constant on the EMG abundance is renormalized away.
