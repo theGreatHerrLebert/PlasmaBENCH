@@ -367,19 +367,28 @@ def build() -> str:
 
     # ---- caveats ----
     S.append("<h2>10. Scope &amp; caveats</h2>")
-    S.append('<div class="caveat"><b>Superposition limit:</b> Stage 2 adds simulated signal '
-             '<i>after</i> the real acquisition — it does NOT reproduce ion suppression, source/'
-             'fragmentation competition, fill-time, or detector saturation. It tests the '
-             '<b>dense-background + DIA-NN-processing</b> contribution to the low-abundance effect, '
-             'not the full real-plasma phenomenon.</div>')
+    S.append('<div class="caveat"><b>Known simulator limitation (§9 / §9a):</b> at LOW abundance TimSim '
+             'over-separates spike-in ratios while matched real data stays flat. The proximate cause is '
+             '<i>measured</i> (the faint member of each A/B pair is under-quantified); the code-level '
+             'renderer cause (abundance-proportional spreading interacting with an early per-fragment '
+             'intensity threshold) is a strong <b>candidate, not proven the sole cause</b>, and the fix '
+             'is <b>unverified</b> — to be settled by a rendered-signal audit + ablation. Read SIM '
+             'low-abundance ratios with this caveat.</div>')
+    S.append('<div class="caveat"><b>Superposition limit:</b> Stage 2 adds simulated signal <i>after</i> '
+             'the real acquisition — it does NOT reproduce ion suppression, source/fragmentation '
+             'competition, fill-time, or detector saturation. NB the low-abundance over-separation is '
+             'engine-independent and appears on <b>both</b> the blank (Stage 1) and superimposed (Stage 2) '
+             'backgrounds, so it is a property of the simulated signal, not of these missing effects.</div>')
     S.append("""<ul>
     <li><b>Calibration is report-proxy</b> (DIA-NN report quant, not raw MS1/MS2 peak areas) — the
     raw PYE-mix <code>.d</code> would upgrade it to gold-standard. E. coli landed at 0.63× vs 0.53×
     target, within the proxy's resolution.</li>
-    <li><b>Same-background A/B pairing</b> gives a perfect human anchor but likely <b>amplifies</b>
-    the ratio distortion vs real separate injections (identical, perfectly-correlated interference).</li>
-    <li>The earlier "lowest-decile collapse to 1:1" was background-dependent (080 only) and has been
-    dropped as an over-read.</li>
+    <li><b>Same-background A/B pairing</b> gives a perfect human anchor — a simplification vs real
+    separate injections (which carry independent interference); it is not the source of the
+    over-separation (that shows on the blank background too).</li>
+    <li><b>Retracted over-reads (kept for honesty):</b> the earlier "real data compresses at low
+    abundance" was a 6-replicate-averaging artifact (matched 1-vs-1 it is flat, §9); the earlier
+    "lowest-decile collapse to 1:1" was background-dependent (080 only). Both dropped.</li>
     <li>Cross-engine integrity: seed from one engine, score against the union blueprint, read
     differences — not absolute self-recall.</li>
     </ul>""")
