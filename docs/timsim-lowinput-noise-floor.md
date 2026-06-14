@@ -57,9 +57,14 @@ searched with the identical config (only the binary differs across DIA-NN 1.8/2.
    units — *not* an ion count (there is no fractional ion), and it sits **far below the real
    timsTOF detector minimum (~11)**, so it is both the wrong unit and the wrong magnitude.
 
-The dimmer member of each A/B pair has more of its per-pixel contributions fall below the 1.0
-floor → preferentially erased → under-quantified. This is the primary, deterministic cause: the
-signal is diluted across pixels and clipped, with no ion-count statistics to govern it.
+The dimmer member of each A/B pair has more of its (thinly-spread) per-pixel contributions fall
+below the 1.0 floor → preferentially trimmed → under-quantified. **The driver is the deterministic
+dilution, not the floor value:** 1.0 is a *permissive* floor (lower than the real ~11), so on its
+own it would retain MORE faint signal; the problem is that fixed-fraction spreading with no
+ion-count statistics dilutes a faint peptide so thin that a large fraction of its signal sits below
+even 1.0. A real detector concentrates discrete (Poisson) ions into a few pixels well above ~11, so
+real low-abundance peptides quantify faithfully (flat). NB: raising the SIM floor toward ~11 would
+clip MORE and worsen the artifact — the floor is the trimmer, not the cause.
 
 **Why the existing noise mechanisms don't fix it (incl. real-data noise — observed):**
 - `add_uniform_noise` is `abundance + abundance*noise` *renormalized to preserve total*
@@ -76,13 +81,16 @@ signal is diluted across pixels and clipped, with no ion-count statistics to gov
   the over-separation (Stage-2 over-separates less than blank Stage-1).
 
 ## Proposed fix
-Model the **real timsTOF detector** instead of the deterministic per-pixel clip: (a) use
-integer ion-count statistics (e.g. Poisson sampling from expected per-pixel counts) rather than
-deterministic fractional intensities, and (b) apply a **realistic minimum-intensity floor at the
-true detector level (~11), not 1.0**, in the Rust renderer immediately before the filtering/
-rounding boundary (`precursor.rs` / `dia.rs`). It must cover **DIA MS2** (where DIA-NN
-quantifies), and ideally MS1 consistently. The current 1.0 floor is both the wrong unit (an
-intensity, not an ion count) and far below the real ~11 minimum.
+Give the renderer **realistic ion-count statistics** (e.g. Poisson sampling from expected
+per-pixel counts) instead of deterministic fractional intensities, in the Rust renderer
+(`precursor.rs` / `dia.rs`), covering **DIA MS2** (where DIA-NN quantifies) and ideally MS1
+consistently — so a faint peptide's ions concentrate into a few pixels (as on a real detector)
+rather than spreading thin and being trimmed. **Do NOT simply raise the 1.0 floor toward the real
+~11**: with the current deterministic dilution that clips MORE and *worsens* the under-
+quantification — the floor is the trimmer, not the cause. (Matching the floor to ~11 is realism,
+but only safe once the counts are realistic.) Caveat: this is the well-motivated hypothesis from
+the measured per-member recovery + the code; the exact interplay of dilution vs floor is only
+fully settled by the fix experiment (add counts, re-sim, re-score against the same target).
 Do NOT add events in `load_findings` (that changes blueprint truth and imposes compression) or a
 constant to the EMG abundance (renormalized → adds no counts). A realistic additive low-count
 floor is one candidate term within this count model, but the deterministic `< 1.0` truncation is

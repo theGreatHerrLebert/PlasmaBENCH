@@ -238,9 +238,12 @@ claims:
       at low abundance, and the higher-minus-lower gap equals the over-separation to the
       decimal and is member-symmetric. The mechanism (read from the rustims rendering
       path, Codex-reviewed) is deterministic: integer event truncation with a 1-event
-      floor (load_findings), deterministic multidimensional dilution, and a hard < 1.0
-      per-pixel intensity threshold + rounding (precursor.rs/dia.rs) with no count
-      sampling — so the dimmer member loses proportionally more sub-unit contributions.
+      floor (load_findings) plus deterministic multidimensional dilution with NO ion-count
+      statistics and a 1.0 intensity floor (precursor.rs/dia.rs): a faint peptide is spread
+      so thin that a large fraction of its signal falls below the floor and is trimmed,
+      under-quantifying the dimmer member. The DRIVER is the deterministic dilution, not the
+      floor value — 1.0 is permissive (below the real timsTOF ~11 detector minimum), so a
+      real detector concentrates discrete (Poisson) ions above ~11 and stays faithful (flat).
       Real-data noise is a SEPARATE background population added at its own m/z (sampled
       real peaks / whole real frames, add_noise_from_real_data), so it lands at other
       coordinates and cannot reconstitute the erased peptide peak — only adds nearby
@@ -268,7 +271,7 @@ claims:
       - The diagnosis localises the cause to TimSim rendering + DIA-NN quant of low-count synthetic peaks; it does not separate rendering from quant beyond what truth-vs-observed shows.
     failure_modes:
       - ABSENT (looked for, not yet produced) — after-fix evidence is an after-fix SIM re-run scored against the same per-member-recovery target. Until it exists, the fix is proposed, not validated.
-      - The fix must land in the Rust renderer before the 1.0 filter — the 1.0 is an INTENSITY floor in simulator units (not an ion count, and far below the real timsTOF detector minimum ~11), so use ion-count statistics plus a realistic ~11 floor. Adding events in load_findings would corrupt blueprint truth; a constant on the EMG abundance is renormalized away.
+      - The fix is realistic ion-count statistics (Poisson) in the Rust renderer so faint signal concentrates physically — NOT raising the 1.0 floor toward the real ~11, which with the current deterministic dilution would clip MORE and worsen it (the floor is the trimmer, not the cause). Adding events in load_findings would corrupt blueprint truth; a constant on the EMG abundance is renormalized away.
 
   - id: plasmabench-ideoverlap-real
     title: On real data 2.x is ~1.8 plus a large extra precursor population (not a strict superset)
