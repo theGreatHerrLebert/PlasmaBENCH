@@ -215,9 +215,12 @@ def plot_ratio_panels(wide: pd.DataFrame, out: Path, conv: RatioConvention = A_O
     axv.set_title(f"Ratio recovery by species ({level})")
     axv.set_ylim(-3, 3.2)
 
+    # Protein has far fewer points than peptide/ion — give it larger, more
+    # opaque markers so the spread is legible; keep the dense levels small.
+    pt_size, pt_alpha = (28, 0.42) if level == "protein" else (6, 0.25)
     for s in SPECIES_ORDER:
         d = wide[wide.species == s]
-        axm.scatter(d["log2_int"], conv.to_display(d["log2_ba"]), s=6, alpha=0.25,
+        axm.scatter(d["log2_int"], conv.to_display(d["log2_ba"]), s=pt_size, alpha=pt_alpha,
                     color=SPECIES_COLOR[s], edgecolors="none",
                     label=f"{SPECIES_LABEL[s]}  (n={len(d):,})")
         axm.axhline(exp_disp[s], color=SPECIES_COLOR[s], ls="--", lw=1.6, alpha=0.9)
@@ -226,7 +229,8 @@ def plot_ratio_panels(wide: pd.DataFrame, out: Path, conv: RatioConvention = A_O
     axm.set_ylabel(conv.ylabel)
     axm.set_title("LFQbench view (dashed = expected ratio)")
     axm.set_ylim(-3, 3.2)
-    leg = axm.legend(loc="upper right", framealpha=0.9, markerscale=3, handletextpad=0.4)
+    leg = axm.legend(loc="upper right", framealpha=0.9,
+                     markerscale=2 if level == "protein" else 3, handletextpad=0.4)
     for lh in leg.legend_handles:
         lh.set_alpha(1)
 
