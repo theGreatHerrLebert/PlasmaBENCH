@@ -345,6 +345,17 @@ def build() -> str:
              'protein-unique is symmetric (628 vs 672). So the <i>overlap structure</i> itself differs '
              'real-vs-SIM, complementing the §9 low-abundance gap.</div>')
 
+    S.append("<h3>9c. Real-data ratio panels — DIA-NN 1.8 vs 2.5</h3>")
+    S.append("<p>LFQbench-style A/B ratio panels on the real G PYE1 runs (ion level, raw "
+             "Precursor.Quantity, human-anchored). Both engines show the same modest <b>global</b> "
+             "compression vs nominal — E. coli +0.94 (1.8) / +0.89 (2.5) vs +1.0; yeast −1.37 / −1.33 "
+             "vs −1.58 — with the human control at 0. 2.5 quantifies more precursors (e.g. ecoli "
+             "11,323 vs 1.8's 9,923). This is the real-data counterpart of the §2 SIM ratio panels; "
+             "the global compression is a real DIA-quant property (present in both engines), distinct "
+             "from the abundance-<i>dependent</i> SIM over-separation of §9.</p>")
+    S.append(img("real_ratios_diann18.png", "DIA-NN 1.8, real G PYE1 — ion-level A/B violins + MA scatter (raw quant)."))
+    S.append(img("real_ratios_diann25.png", "DIA-NN 2.5, real G PYE1 — same view; slightly more compressed, more precursors."))
+
     # ---- caveats ----
     S.append("<h2>10. Scope &amp; caveats</h2>")
     S.append('<div class="caveat"><b>Superposition limit:</b> Stage 2 adds simulated signal '
