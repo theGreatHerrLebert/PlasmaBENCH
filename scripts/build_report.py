@@ -251,8 +251,44 @@ def build() -> str:
     reproduction: <code>docs/finding-diann-1.8-vs-2.5-quant.md</code>,
     <code>scripts/diag_quant_{iqr,residual,method}.py</code>.</small></p>""")
 
+    # ---- Real vs SIM validation ----
+    S.append("<h2>9. Real vs SIM — validation against experimental data</h2>")
+    S.append("""<p>Ute provided the <b>real experimental PYE1 runs</b> behind this simulated method
+    (the G250506 G-site acquisitions — the <i>same batch</i> as the Stage-2 reference plasma): 12
+    runs, 6 replicates × Sample A/B. We searched them with DIA-NN 1.8/2.5/2.6 under the <i>same
+    unified <code>diann-pye1.cfg</code></i> used for SIM (only the binary differs) and read RAW
+    Precursor.Quantity. Real PYE1 is itself a ratio test (nominal A/B yeast 3.0, E.&nbsp;coli 0.5,
+    human 1.0), so the ratio-vs-abundance behaviour compares directly to SIM. No blueprint exists on
+    real data, so FDR is not scorable — but the <b>ratio axis</b> (the one that matters here) is.</p>""")
+    S.append('<div class="key"><b>Cross-check:</b> our unified 2.5/2.6 reproduce Ute\'s own report '
+             'almost exactly (global A/B ecoli +0.89–0.90 / yeast −1.32–1.33 vs her +0.89/−1.33, '
+             '~27–28k IDs/run) — so the comparison is sound, not a settings artifact.</div>')
+    S.append(img("real_vs_sim_compression.png",
+                 "A/B ratio vs abundance octile (1=lowest…8=highest), DIA-NN 1.8, raw quant, "
+                 "human-anchored. REAL stays near nominal; SIM over-separates hard at low abundance; "
+                 "human (control) flat."))
+    S.append(table(["lowest-abundance octile (A/B)", "E. coli", "yeast"],
+                   [["REAL G PYE1", "+0.81", "−1.25"],
+                    ["SIM Stage 2 (real plasma)", "+1.44", "−2.29"],
+                    ["SIM Stage 1 (blank)", "+1.83", "−2.40"],
+                    ["nominal", "+1.00", "−1.58"]]))
+    S.append('<div class="key"><b>The headline real-vs-SIM gap: TimSim produces spurious '
+             'low-abundance ratio <i>over-separation</i> that real data does not.</b> At the lowest '
+             'octile, real ratios sit on the 1:1 side of nominal (mild compression — textbook low-S/N), '
+             'while SIM blows <i>outward</i> (E.&nbsp;coli +1.8, yeast −2.4), converging to nominal only '
+             'at high abundance. The effect is <b>engine-independent</b> (1.8/2.5/2.6 agree — a data '
+             'property, per §8), shows on <b>both</b> blank (Stage 1) and real-plasma (Stage 2) '
+             'backgrounds, and is <b>not an MBR artifact</b>: a no-MBR control '
+             '(<code>results/diann-1.8-realG-nombr</code>; completeness correctly dropped 51%→26% '
+             'in-all-12) leaves the compression intact and slightly <i>stronger</i>, so it is intrinsic '
+             'to the real signal. Conclusion: the simulator under-models <b>detector behaviour at low '
+             'input amounts</b> — its low-count ions get spuriously extreme fold-changes instead of '
+             'regressing toward nominal. This is the one concrete, quantified, ground-truth-validated '
+             'gap in the simulation. (Reproduce: <code>scripts/plot_real_vs_sim_compression.py</code>; '
+             'real-data path = <code>loader.load_observations_real</code>.)</div>')
+
     # ---- caveats ----
-    S.append("<h2>9. Scope &amp; caveats</h2>")
+    S.append("<h2>10. Scope &amp; caveats</h2>")
     S.append('<div class="caveat"><b>Superposition limit:</b> Stage 2 adds simulated signal '
              '<i>after</i> the real acquisition — it does NOT reproduce ion suppression, source/'
              'fragmentation competition, fill-time, or detector saturation. It tests the '
@@ -269,9 +305,9 @@ def build() -> str:
     <li>Cross-engine integrity: seed from one engine, score against the union blueprint, read
     differences — not absolute self-recall.</li>
     </ul>""")
-    S.append("<p><small>PlasmaBENCH · branch <code>plots-analysis-panels</code> · panels: "
-             "P1 ratios, P3 sensitivity/bias, P5 FDR, P6 quant, ID-overlap, 1.8-vs-2.5 quant "
-             "(§8) · quantity basis: raw Precursor.Quantity · 85-check test suite.</small></p>")
+    S.append("<p><small>PlasmaBENCH · panels: P1 ratios, P3 sensitivity/bias, P5 FDR, P6 quant, "
+             "ID-overlap, 1.8/2.5/2.6 quant (§8), real-vs-SIM validation (§9) · SUT: DIA-NN "
+             "1.8/2.5/2.6 · quantity basis: raw Precursor.Quantity · 90-check test suite.</small></p>")
     S.append("</body></html>")
     return "\n".join(S)
 

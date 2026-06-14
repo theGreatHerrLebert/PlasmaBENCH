@@ -264,6 +264,71 @@ def load_observations(report_path: str | Path, manifest: RunManifest,
     return out
 
 
+def sample_from_slot(run_id: str) -> str | None:
+    """Real G PYE1 A/B map: Slot2-11 → A, Slot2-12 → B (per Ute's Sample_Liste)."""
+    if "Slot2-11" in run_id:
+        return "A"
+    if "Slot2-12" in run_id:
+        return "B"
+    return None
+
+
+def load_observations_real(report_path: str | Path, sample_of=sample_from_slot,
+                           experiment: str = "real", software: str = "DIA-NN",
+                           exclude_decoys: bool = True, quant_col: str | None = None) -> pd.DataFrame:
+    """``observations`` from a DIA-NN report with NO blueprint (real experimental data).
+
+    Mirrors :func:`load_observations` but assigns ``sample`` via ``sample_of(run_id)``
+    (a callable, default the Slot2-11/12 → A/B map) instead of a manifest, and carries
+    no truth/blueprint. Output is directly usable by ``ratios.build_ratio_table`` and the
+    quant diagnostics (which need only the observation table). Runs whose sample is None
+    are dropped (e.g. interleaved HeLa/blank vials). ``quant_col`` default = raw
+    Precursor.Quantity (the benchmark standard, see :func:`load_observations`).
+    """
+    report_path = Path(report_path)
+    if report_path.suffix.lower() in (".parquet", ".pq"):
+        df = pd.read_parquet(report_path)
+    else:
+        df = pd.read_csv(report_path, sep="\t", low_memory=False)
+    if exclude_decoys and "Decoy" in df.columns:
+        df = df[df["Decoy"] == 0]
+
+    df["sample"] = df["Run"].map(sample_of)
+    n_drop = int(df["sample"].isna().sum())
+    if n_drop:
+        df = df[df["sample"].notna()]
+    df["experiment"] = experiment
+    df["run_id"] = df["Run"]
+    df["software"] = software
+    df["sequence_modified"] = df["Modified.Sequence"].map(diann_modseq_to_unimod)
+    df["sequence"] = df.get("Stripped.Sequence", df["sequence_modified"].map(_strip_unimod))
+    df["charge"] = df["Precursor.Charge"].astype(int)
+    df["protein_names"] = df.get("Protein.Names")
+    df["protein_group"] = df.get("Protein.Group")
+    df["protein_id"] = df.get("Protein.Ids")
+    df["species"] = df["protein_names"].map(assign_species)
+    df["truth_scope"] = "background_unknown"
+
+    if quant_col is not None:
+        if quant_col not in df.columns:
+            raise ValueError(f"quant_col {quant_col!r} not in report columns")
+        qcol = quant_col
+    else:
+        qcol = "Precursor.Quantity" if "Precursor.Quantity" in df.columns else "Precursor.Normalised"
+    df["observed_intensity"] = df[qcol].astype(float)
+    df["pg_maxlfq"] = df.get("PG.MaxLFQ")
+    df["q_value"] = df.get("Q.Value")
+    df["lib_q_value"] = df.get("Lib.Q.Value")
+    df["pg_q_value"] = df.get("PG.Q.Value")
+    df["lib_pg_q_value"] = df.get("Lib.PG.Q.Value")
+    df["precursor_id"] = df.get("Precursor.Id", df["sequence_modified"] + df["charge"].astype(str))
+
+    out = df[[c for c in OBS_COLUMNS if c in df.columns]].copy()
+    out = _collapse_observation_duplicates(out)
+    _assert_unique_precursor(out, "observations(real)")
+    return out
+
+
 def read_diann_minimal(path: str | Path, q_value_max: float | None = None) -> pd.DataFrame:
     """Manifest-free DIA-NN report → just the identity + level columns.
 

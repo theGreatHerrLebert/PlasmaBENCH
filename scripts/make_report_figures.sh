@@ -64,4 +64,8 @@ python scripts/plot_true_abundance.py --report-a "$R18_S1" --label-a "Stage 1 (b
 echo "### §8  1.8-vs-2.5 quant comparison (raw headline + normalization mechanism)"
 python scripts/plot_quant_18v25.py
 
+echo "### §9  real-vs-SIM compression capstone (needs results/diann-1.8-realG + SIM stage reports)"
+python scripts/plot_real_vs_sim_compression.py || \
+  echo "  (skipped: real-data search results/diann-1.8-realG not present)"
+
 echo "DONE — figures in $FIG"
