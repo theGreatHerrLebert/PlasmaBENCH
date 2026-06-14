@@ -1,8 +1,8 @@
 # PYE1: simulated vs real — what we found
 
 **TL;DR — TimSim reproduces your real PYE1 data well almost everywhere; the one real gap is
-that the simulation over-separates spike-in ratios at *low* abundance, and we traced that to a
-specific, fixable simulator behaviour.**
+that the simulation over-separates spike-in ratios at *low* abundance, which we have narrowed to
+a specific part of the simulator (with candidate fixes and a test to confirm it).**
 
 Every finding below is backed by a registered, one-command-replayable claim in our EVIDENT
 manifest (`evident.yaml`); the claim id is in parentheses.
@@ -21,18 +21,17 @@ For the *faintest* peptides the simulation reports fold-changes that are **too e
 behaviour you noticed really is different between simulated and real, and it lives at low input.
 *(plasmabench-real-vs-sim-validation, report §9)*
 
-### 3. We found where the gap comes from — and it is fixable.
-The smaller partner of each A/B pair is under-measured at low signal because the simulator spreads
-each peptide's signal **deterministically across many pixels with no real ion-count statistics**,
-so for a faint peptide a large fraction of that thinly-spread signal falls under the renderer's
-intensity floor and is dropped — whereas a real detector concentrates discrete (Poisson) ions into
-a few pixels that survive its (higher, ~11) threshold, keeping real low-abundance peptides faithful;
-the real-data noise we add can't recover it either, because it is *separate background sampled at
-its own m/z* (it lands elsewhere, not on the faint peptide's peak). This is a strong code-level
-*candidate* cause (not yet proven the only one); the fix is to change how low-abundance signal is
-rendered — combine a peak's signal *before* thresholding, and/or model discrete ions with detector
-gain — **not** raising the floor (which clips more). *(plasmabench-lowinput-overseparation — candidate
-cause + fix, to be confirmed by a rendered-signal audit; not yet built)*
+### 3. We have narrowed where the gap comes from — with a fix to test.
+The faint partner of each A/B pair is the one that's under-measured at low signal. The strongest
+code-level *candidate* cause (not yet proven the only one) is in how the simulator renders faint
+peaks: it spreads each peptide's signal across many pixels and applies an intensity threshold to
+each fragment *before* combining them, so for a faint peptide a large fraction of that thinly-spread
+signal falls under the threshold and is dropped — and the real-data noise we add can't recover it,
+because it is separate background at its own m/z (it lands elsewhere, not on the faint peptide's
+peak). Your real data simply does not show this — it stays flat. The fix is to change how faint
+signal is rendered (combine a peak's pieces *before* thresholding, and/or model discrete ions with
+detector gain) — **not** raising the intensity floor, which would drop more; we'd confirm it with a
+rendered-signal audit. *(plasmabench-lowinput-overseparation — candidate cause + fix, not yet built)*
 
 ### 4. DIA-NN 2.6 behaves essentially like 2.5 on quantification.
 2.6 did **not** change the quant behaviour relative to 2.5 — both are more sensitive than 1.8,
