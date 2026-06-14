@@ -28,9 +28,11 @@ so for a faint peptide a large fraction of that thinly-spread signal falls under
 intensity floor and is dropped — whereas a real detector concentrates discrete (Poisson) ions into
 a few pixels that survive its (higher, ~11) threshold, keeping real low-abundance peptides faithful;
 the real-data noise we add can't recover it either, because it is *separate background sampled at
-its own m/z* (it lands elsewhere, not on the faint peptide's peak). The fix is realistic ion-count
-statistics so the signal concentrates physically — **not** raising the floor, which would clip more.
-*(plasmabench-lowinput-overseparation — proposed, not yet built)*
+its own m/z* (it lands elsewhere, not on the faint peptide's peak). This is a strong code-level
+*candidate* cause (not yet proven the only one); the fix is to change how low-abundance signal is
+rendered — combine a peak's signal *before* thresholding, and/or model discrete ions with detector
+gain — **not** raising the floor (which clips more). *(plasmabench-lowinput-overseparation — candidate
+cause + fix, to be confirmed by a rendered-signal audit; not yet built)*
 
 ### 4. DIA-NN 2.6 behaves essentially like 2.5 on quantification.
 2.6 did **not** change the quant behaviour relative to 2.5 — both are more sensitive than 1.8,

@@ -57,14 +57,17 @@ searched with the identical config (only the binary differs across DIA-NN 1.8/2.
    units — *not* an ion count (there is no fractional ion), and it sits **far below the real
    timsTOF detector minimum (~11)**, so it is both the wrong unit and the wrong magnitude.
 
-The dimmer member of each A/B pair has more of its (thinly-spread) per-pixel contributions fall
-below the 1.0 floor → preferentially trimmed → under-quantified. **The driver is the deterministic
-dilution, not the floor value:** 1.0 is a *permissive* floor (lower than the real ~11), so on its
-own it would retain MORE faint signal; the problem is that fixed-fraction spreading with no
-ion-count statistics dilutes a faint peptide so thin that a large fraction of its signal sits below
-even 1.0. A real detector concentrates discrete (Poisson) ions into a few pixels well above ~11, so
-real low-abundance peptides quantify faithfully (flat). NB: raising the SIM floor toward ~11 would
-clip MORE and worsen the artifact — the floor is the trimmer, not the cause.
+Per-peak intensity is proportional to `total_events`, so a fainter peptide has all per-pixel
+contributions scaled down and more of them cross below the fixed `1.0` threshold; for DIA MS2 the
+filter is applied **per fragment spectrum BEFORE frame aggregation** (`dia.rs:663`), so two sub-1.0
+contributions at the same coordinate cannot even combine to survive. The under-recovery of the
+dimmer member is therefore the **interaction of abundance-proportional fractional spreading with a
+nonlinear, early per-contribution threshold** — *not* the floor value alone (spreading by itself
+conserves intensity; 1.0 is permissive, below the real ~11). **This is a code-supported renderer-side
+cause that is *capable* of producing the measured per-member under-quantification — it is NOT proven
+to be the sole or quantitative driver; DIA-NN's own integration is not excluded.** NB: raising the
+floor toward ~11 as a standalone change clips MORE and worsens it; and naive Poisson with sub-1
+pixel means yields mostly zeros, not ~11 — so neither is a fix on its own.
 
 **Why the existing noise mechanisms don't fix it (incl. real-data noise — observed):**
 - `add_uniform_noise` is `abundance + abundance*noise` *renormalized to preserve total*
@@ -80,17 +83,20 @@ clip MORE and worsen the artifact — the floor is the trimmer, not the cause.
   ratio (mild compression), which is why adding real-data noise **mildly reduced but did not remove**
   the over-separation (Stage-2 over-separates less than blank Stage-1).
 
-## Proposed fix
-Give the renderer **realistic ion-count statistics** (e.g. Poisson sampling from expected
-per-pixel counts) instead of deterministic fractional intensities, in the Rust renderer
-(`precursor.rs` / `dia.rs`), covering **DIA MS2** (where DIA-NN quantifies) and ideally MS1
-consistently — so a faint peptide's ions concentrate into a few pixels (as on a real detector)
-rather than spreading thin and being trimmed. **Do NOT simply raise the 1.0 floor toward the real
-~11**: with the current deterministic dilution that clips MORE and *worsens* the under-
-quantification — the floor is the trimmer, not the cause. (Matching the floor to ~11 is realism,
-but only safe once the counts are realistic.) Caveat: this is the well-motivated hypothesis from
-the measured per-member recovery + the code; the exact interplay of dilution vs floor is only
-fully settled by the fix experiment (add counts, re-sim, re-score against the same target).
+## Proposed fix (candidates — to be settled by the audit below)
+The bias lives in the **spreading × early-threshold interaction**, so the levers are:
+1. **Relocate the threshold** — aggregate per-coordinate contributions FIRST, then apply a single
+   intensity threshold (so sub-1.0 fragments that belong to the same peak can combine). This alone
+   may remove much of the bias, with no count model.
+2. **Discrete ion allocation + a gain model** — allocate integer ions to pixels and apply an
+   explicit ion→recorded-intensity (detector gain) mapping with a properly-placed detector
+   threshold. Plain `Poisson(expected_pixel_intensity)` is NOT sufficient (sub-1 means → mostly
+   zeros), and adding it while keeping an ~11 floor could make loss worse.
+Do **not** simply raise the 1.0 floor toward ~11 as a standalone change — it clips more and worsens
+the dim member. **Decisive experiment:** audit the *rendered* signal (rendered-frame intensity vs
+blueprint truth, per member, vs true abundance) to confirm the renderer — not DIA-NN integration —
+is the locus, then ablate threshold-order / count-model and re-score against the per-member-recovery
+target. Only then is the fix (and which lever) established.
 Do NOT add events in `load_findings` (that changes blueprint truth and imposes compression) or a
 constant to the EMG abundance (renormalized → adds no counts). A realistic additive low-count
 floor is one candidate term within this count model, but the deterministic `< 1.0` truncation is
