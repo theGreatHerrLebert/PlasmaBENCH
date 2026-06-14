@@ -265,7 +265,7 @@ claims:
       - The diagnosis localises the cause to TimSim rendering + DIA-NN quant of low-count synthetic peaks; it does not separate rendering from quant beyond what truth-vs-observed shows.
     failure_modes:
       - ABSENT (looked for, not yet produced) — after-fix evidence is an after-fix SIM re-run scored against the same per-member-recovery target. Until it exists, the fix is proposed, not validated.
-      - The fix must land in the Rust renderer before the 1.0 filter; adding events in load_findings would corrupt blueprint truth, and a constant on the EMG abundance is renormalized away.
+      - The fix must land in the Rust renderer before the 1.0 filter (the 1.0 is an INTENSITY floor in simulator units, not an ion count, and far below the real timsTOF detector minimum ~11): use ion-count statistics + a realistic ~11 floor. Adding events in load_findings would corrupt blueprint truth; a constant on the EMG abundance is renormalized away.
 
   - id: plasmabench-ideoverlap-real
     title: On real data 2.x is ~1.8 plus a large extra precursor population (not a strict superset)

@@ -22,11 +22,13 @@ behaviour you noticed really is different between simulated and real, and it liv
 *(plasmabench-real-vs-sim-validation, report §9)*
 
 ### 3. We found the cause — and it is fixable.
-The smaller partner of each A/B pair is under-measured at low signal because simulated peaks
-have no realistic noise floor (a hard "below-1-ion" cutoff erases them), and the noise we add
-from real data is applied *too late in the pipeline to help* — which is exactly why adding it
-didn't fix it; the fix is to give simulated low-intensity peaks a proper count/noise model.
-*(plasmabench-lowinput-overseparation — proposed fix, not yet implemented)*
+The smaller partner of each A/B pair is under-measured at low signal because the simulator
+spreads each peptide's signal across many pixels and clips them at an intensity floor of **1**
+in its own arbitrary units — far below the real timsTOF detector minimum (~11) — and builds the
+peaks deterministically **without real ion-count statistics**, so a faint peptide's thinly-spread
+signal is erased; the real-data noise we add comes too late in the pipeline to compensate.
+The fix is to model the real detector (a realistic intensity floor + ion-count statistics)
+instead of the deterministic clip. *(plasmabench-lowinput-overseparation — proposed, not yet built)*
 
 ### 4. DIA-NN 2.6 behaves essentially like 2.5 on quantification.
 2.6 did **not** change the quant behaviour relative to 2.5 — both are more sensitive than 1.8,
