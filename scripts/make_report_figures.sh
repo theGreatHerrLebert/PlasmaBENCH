@@ -68,6 +68,8 @@ echo "### §9  real-vs-SIM compression capstone (needs results/diann-1.8-realG +
 python scripts/plot_real_vs_sim_compression.py || \
   echo "  (skipped: real-data search results/diann-1.8-realG not present)"
 python scripts/plot_lowabund_underquant.py || \
+python scripts/plot_real_ratios.py --report results/diann-1.8-realG/report.tsv --label "DIA-NN 1.8" --out "$FIG/real_ratios_diann18.png" || echo "  (skipped: real 1.8 report missing)"
+python scripts/plot_real_ratios.py --report results/diann-2.5-realG/report.parquet --label "DIA-NN 2.5" --out "$FIG/real_ratios_diann25.png" || echo "  (skipped: real 2.5 report missing)"
   echo "  (skipped §9b: SIM Stage-2 report/blueprint not present)"
 echo "### §9a real-data cross-engine ID overlap (1.8 vs 2.x)"
 python scripts/plot_id_overlap.py --report-a results/diann-1.8-realG/report.tsv --label-a "DIA-NN 1.8" \
