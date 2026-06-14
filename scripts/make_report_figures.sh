@@ -67,6 +67,8 @@ python scripts/plot_quant_18v25.py
 echo "### §9  real-vs-SIM compression capstone (needs results/diann-1.8-realG + SIM stage reports)"
 python scripts/plot_real_vs_sim_compression.py || \
   echo "  (skipped: real-data search results/diann-1.8-realG not present)"
+python scripts/plot_lowabund_underquant.py || \
+  echo "  (skipped §9b: SIM Stage-2 report/blueprint not present)"
 echo "### §9a real-data cross-engine ID overlap (1.8 vs 2.x)"
 python scripts/plot_id_overlap.py --report-a results/diann-1.8-realG/report.tsv --label-a "DIA-NN 1.8" \
   --report-b results/diann-2.5-realG/report.parquet --label-b "DIA-NN 2.5" \

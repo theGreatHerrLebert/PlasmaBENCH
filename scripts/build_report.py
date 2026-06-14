@@ -297,7 +297,33 @@ def build() -> str:
              'same-pipeline comparison); human-anchoring is a constant shift (shape-invariant). '
              'Reproduce: <code>scripts/plot_real_vs_sim_compression.py</code>.</div>')
 
-    S.append("<h3>9a. Cross-engine ID overlap on real data — 1.8 vs 2.x</h3>")
+    S.append("<h3>9a. Cause of the over-separation — the low-intensity peak is under-quantified</h3>")
+    S.append("""<p>The gap can be localised, because SIM has blueprint truth. Binning the <b>truth</b>
+    ratio by true abundance, it is exactly nominal and perfectly flat (the seed is abundance-independent
+    by construction) — so the over-separation is introduced <i>after</i> the seed, in TimSim's rendering
+    + DIA-NN's quant. Decomposing it per A/B-pair member (quant recovery
+    <code>log2(observed/truth)</code> vs true abundance):</p>""")
+    S.append(table(["recovery log2(obs/truth), lowest→highest octile", "higher member (big peak)", "lower member (small peak)"],
+                   [["E. coli", "+0.04 → −0.07  (flat)", "−0.36 → −0.06"],
+                    ["yeast", "+0.11 → −0.07  (flat)", "−0.51 → −0.06"]]))
+    S.append(img("sim_lowabund_underquant.png",
+                 "Per-member quant recovery vs true abundance, SIM Stage 2. The big peak is accurate "
+                 "everywhere; the small peak is under-quantified at low abundance; the shaded gap = the "
+                 "over-separation."))
+    S.append('<div class="key"><b>Mechanism, pinned:</b> the <i>higher</i>-intensity member of each '
+             'pair is recovered accurately at all abundances, while the <i>lower</i> member is '
+             'under-quantified at low abundance (~0.4 E.&nbsp;coli / ~0.6 yeast log2 in the bottom octile). '
+             'The higher−lower gap <b>equals</b> the over-separation to the decimal — it fully accounts '
+             'for it — and is member-symmetric (holds where A is the big side and where B is), so it is '
+             'about small-vs-big peak, not A/B or species. Real low peaks ride on an additive noise '
+             'floor / interference that lifts the small peak (a clue: Stage 2, on real plasma, '
+             'over-separates <i>less</i> than blank Stage 1); TimSim\'s synthetic peaks lack it, so the '
+             'small peak collapses below faithful quant. <b>Fix:</b> add a realistic additive intensity '
+             'floor / low-count noise baseline to simulated peaks — write-up in '
+             '<code>docs/timsim-lowinput-noise-floor.md</code> (rustims). Reproduce: '
+             '<code>scripts/plot_lowabund_underquant.py</code>.</div>')
+
+    S.append("<h3>9b. Cross-engine ID overlap on real data — 1.8 vs 2.x</h3>")
     S.append("<p>Pooled over all 12 real runs (q&lt;0.01). 2.5/2.6 identify ~23–25% more precursors "
              "than 1.8 (35k vs 28.5k); 2.6 ≈ 2.5.</p>")
     S.append(table(["overlap (precursor)", "shared", "1.8-only", "2.x-only", "Jaccard"],
