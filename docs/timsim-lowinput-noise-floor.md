@@ -1,14 +1,17 @@
-# TimSim gap: low-input synthetic peaks lack an additive noise floor → ratio over-separation
+# TimSim gap: deterministic sub-1.0 ion-count collapse → low-abundance ratio over-separation
 
-*Ready to file as a rustims issue. Validated against real experimental data (PlasmaBENCH PYE1).*
+*Ready to file as a rustims issue. Validated against real experimental data (PlasmaBENCH PYE1);
+the code-level mechanism below was confirmed by reading the rendering path (Codex review).*
 
 ## Summary
 TimSim (`from_findings`) reproduces real PYE1 A/B spike-in ratios well at moderate-to-high
 abundance, but **spuriously over-separates fold changes at low abundance** — simulated
 low-abundance precursors get ratios *more extreme* than nominal, an effect absent in real data.
 Root cause: the **lower-intensity member of each A/B pair is under-quantified at low abundance**
-because synthetic peaks have no realistic additive noise floor; the small peak collapses below
-where DIA-NN quantifies it faithfully, inflating the fold change.
+because the synthetic-signal renderer uses **deterministic fractional intensities with a hard
+`< 1.0` per-pixel threshold + rounding** (no count sampling). The dimmer member loses
+proportionally more of its sub-unit per-pixel contributions before they are ever written, so its
+quantity drops and the fold change inflates.
 
 ## Evidence (PlasmaBENCH, DIA-NN 1.8, raw Precursor.Quantity)
 Validated against Ute's real G250506 PYE1 runs (same batch as the Stage-2 reference plasma),
@@ -39,19 +42,41 @@ searched with the identical config (only the binary differs across DIA-NN 1.8/2.
    symmetric (holds where A is the big side *and* where B is) → it is about small-vs-big peak,
    not A/B or species.
 
-## Why real data doesn't show it
-Real low-abundance peaks ride on an **additive noise floor / co-eluting interference** that
-*lifts the small peak*, keeping the A/B ratio accurate. A clue: Stage 2 (simulated spike-in
-superimposed on *real* plasma) over-separates **less** than Stage 1 (blank) — the real
-background partially supplies the missing floor. TimSim's purely synthetic peaks have no such
-additive baseline, so the small peak falls below the faithful-quant regime.
+## Code-level mechanism (confirmed against the rendering path)
+1. **Integer event scaling, truncated, floored at 1**: `events = max(1, int(intensity / median *
+   upscale_factor * multiplier))` (`load_findings.py:504/565`). Dim findings lose fractional
+   events and eventually collapse to the same 1-event floor (matters below `upscale_factor`,
+   default 100000).
+2. **Deterministic multidimensional dilution**: events are split across frame × scan × charge ×
+   isotope/fragment as `frame_abundance * scan_abundance * ion_abundance * total_events`
+   (`precursor.rs:125/133`, `dia.rs:531/568`) — no Poisson/binomial count draw.
+3. **Hard `< 1.0` per-pixel threshold + rounding + uint32**: individual MS1/MS2 centroid
+   contributions below 1.0 are **discarded** (`precursor.rs:165`, `dia.rs:504/673/731`),
+   survivors rounded (`dia.rs:321/400`) and cast to uint32 (`tdf.py:238`).
+
+The dimmer member of each A/B pair has more of its per-pixel contributions fall below 1.0 →
+preferentially erased → under-quantified. This is the primary, deterministic cause.
+
+**Why the existing noise mechanisms don't fix it (incl. real-data noise — observed):**
+- `add_uniform_noise` is `abundance + abundance*noise` *renormalized to preserve total*
+  (`utility.py:56`) — multiplicative chromatographic-shape jitter, NOT an additive floor; creates
+  no signal where abundance is 0; defaults off.
+- Reference-noise / real-data superimpose is genuinely additive **but injected only AFTER the
+  synthetic `< 1.0` filtering + rounding** (`assemble_frames.py:132/143`,
+  `add_noise_from_real_data.py:110/128`). So it cannot restore already-discarded synthetic
+  contributions; it merely adds nearby interfering peaks → DIA-NN reports a *less* extreme ratio
+  (mild compression), which is why adding real-data noise did **not** remove the over-separation.
 
 ## Proposed fix
-Add a **realistic additive intensity floor / low-count noise baseline** to simulated precursor
-peaks (and/or intensity-dependent quant jitter that mimics the detector at low ion counts), so
-small peaks retain quantifiable signal rather than collapsing below DIA-NN's quant limit. The
-PlasmaBENCH analysis above is the validation target: after the fix, the SIM per-member recovery
-curves (and the ratio-vs-abundance curve) should flatten to match real data.
+Replace the deterministic fractional intensities with a **count model in the Rust renderer,
+immediately before the `1.0` filtering/rounding boundary** (`precursor.rs` / `dia.rs`): e.g.
+Poisson sampling from expected per-pixel counts, plus a detector/background count term *before*
+thresholding. It must cover **DIA MS2** (where DIA-NN quantifies), and ideally MS1 consistently.
+Do NOT add events in `load_findings` (that changes blueprint truth and imposes compression) or a
+constant to the EMG abundance (renormalized → adds no counts). A realistic additive low-count
+floor is one candidate term within this count model, but the deterministic `< 1.0` truncation is
+the demonstrated primary mechanism. The PlasmaBENCH per-member recovery + ratio-vs-abundance
+curves are the validation target: after the fix they should flatten to match real data.
 
 ## Reproduce
 PlasmaBENCH: `scripts/plot_real_vs_sim_compression.py` (real-vs-SIM ratio vs abundance),

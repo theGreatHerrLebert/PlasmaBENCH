@@ -315,13 +315,17 @@ def build() -> str:
              'under-quantified at low abundance (~0.4 E.&nbsp;coli / ~0.6 yeast log2 in the bottom octile). '
              'The higher−lower gap <b>equals</b> the over-separation to the decimal — it fully accounts '
              'for it — and is member-symmetric (holds where A is the big side and where B is), so it is '
-             'about small-vs-big peak, not A/B or species. Real low peaks ride on an additive noise '
-             'floor / interference that lifts the small peak (a clue: Stage 2, on real plasma, '
-             'over-separates <i>less</i> than blank Stage 1); TimSim\'s synthetic peaks lack it, so the '
-             'small peak collapses below faithful quant. <b>Fix:</b> add a realistic additive intensity '
-             'floor / low-count noise baseline to simulated peaks — write-up in '
-             '<code>docs/timsim-lowinput-noise-floor.md</code> (rustims). Reproduce: '
-             '<code>scripts/plot_lowabund_underquant.py</code>.</div>')
+             'about small-vs-big peak, not A/B or species. <b>Code-level cause</b> (confirmed by '
+             'reading the rustims rendering path): the synthetic renderer uses deterministic fractional '
+             'intensities with a hard <code>&lt;1.0</code> per-pixel threshold + rounding (no count '
+             'sampling), so the dimmer member loses proportionally more sub-unit contributions before '
+             'they are written. Tellingly, the real-data noise/superimpose is injected <i>after</i> that '
+             'threshold, so it cannot restore the erased signal (it only adds interfering peaks → mild '
+             'compression) — which is why adding real-data noise did <b>not</b> remove the over-separation. '
+             '<b>Fix</b> (right place = the Rust renderer before the <code>1.0</code> filter): a per-pixel '
+             'count model (e.g. Poisson + detector/background counts) for DIA MS2 — write-up + citations '
+             'in <code>docs/timsim-lowinput-noise-floor.md</code> (ready to file as a rustims issue). '
+             'Reproduce: <code>scripts/plot_lowabund_underquant.py</code>.</div>')
 
     S.append("<h3>9b. Cross-engine ID overlap on real data — 1.8 vs 2.x</h3>")
     S.append("<p>Pooled over all 12 real runs (q&lt;0.01). 2.5/2.6 identify ~23–25% more precursors "
