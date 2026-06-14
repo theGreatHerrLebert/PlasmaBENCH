@@ -10,11 +10,14 @@
 FROM python:3.12-slim
 
 # Analysis deps only (no jupyter/sagepy — the DIA-NN scorer + plots don't need them).
+# Pinned exact versions for reproducible replay.
 RUN pip install --no-cache-dir \
-    "pandas>=2.0" "numpy>=1.24" "pyarrow>=14.0" "matplotlib>=3.7" "PyYAML>=6.0" \
+    pandas==2.2.3 numpy==2.1.3 pyarrow==18.1.0 matplotlib==3.9.3 PyYAML==6.0.2 \
  && apt-get update && apt-get install -y --no-install-recommends make \
  && rm -rf /var/lib/apt/lists/*
 
+# Deterministic headless plotting (the scripts also set Agg, belt-and-suspenders).
+ENV MPLBACKEND=Agg
 WORKDIR /work
 # Pinned code + manifest (data dirs are mounted, never copied).
 COPY plasmabench/ ./plasmabench/

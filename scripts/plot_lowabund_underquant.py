@@ -40,6 +40,10 @@ def main():
     m = build_manifest(REP, SIM, "s2", "background_unknown")
     truth = pd.concat([load_truth(r, m) for r in m.runs], ignore_index=True)
     obs = load_observations(REP, m)
+    # q<0.01 filter on observations before joining (score only confident IDs).
+    for qc in ("q_value", "lib_q_value", "pg_q_value", "lib_pg_q_value"):
+        if qc in obs.columns:
+            obs = obs[obs[qc].isna() | (obs[qc] <= 0.01)]
     j = _wide(truth, "truth_intensity").join(_wide(obs, "observed_intensity"),
                                              lsuffix="_t", rsuffix="_o", how="inner")
     j = j.dropna(subset=["A_t", "B_t", "A_o", "B_o"])
