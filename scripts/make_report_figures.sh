@@ -67,5 +67,14 @@ python scripts/plot_quant_18v25.py
 echo "### §9  real-vs-SIM compression capstone (needs results/diann-1.8-realG + SIM stage reports)"
 python scripts/plot_real_vs_sim_compression.py || \
   echo "  (skipped: real-data search results/diann-1.8-realG not present)"
+echo "### §9a real-data cross-engine ID overlap (1.8 vs 2.x)"
+python scripts/plot_id_overlap.py --report-a results/diann-1.8-realG/report.tsv --label-a "DIA-NN 1.8" \
+  --report-b results/diann-2.5-realG/report.parquet --label-b "DIA-NN 2.5" \
+  --title "Real PYE1 ID overlap — 1.8 vs 2.5 (q<0.01, 12 runs pooled)" \
+  --out "$FIG/real_overlap_18_vs_25.png" || echo "  (skipped: real reports missing)"
+python scripts/plot_id_overlap.py --report-a results/diann-1.8-realG/report.tsv --label-a "DIA-NN 1.8" \
+  --report-b results/diann-2.6-realG/report.parquet --label-b "DIA-NN 2.6" \
+  --title "Real PYE1 ID overlap — 1.8 vs 2.6 (q<0.01, 12 runs pooled)" \
+  --out "$FIG/real_overlap_18_vs_26.png" || echo "  (skipped: real reports missing)"
 
 echo "DONE — figures in $FIG"

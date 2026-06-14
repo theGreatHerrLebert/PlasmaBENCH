@@ -287,6 +287,24 @@ def build() -> str:
              'gap in the simulation. (Reproduce: <code>scripts/plot_real_vs_sim_compression.py</code>; '
              'real-data path = <code>loader.load_observations_real</code>.)</div>')
 
+    S.append("<h3>9a. Cross-engine ID overlap on real data — 1.8 vs 2.x</h3>")
+    S.append("<p>Pooled over all 12 real runs (q&lt;0.01). 2.5/2.6 identify ~23–25% more precursors "
+             "than 1.8 (35k vs 28.5k); 2.6 ≈ 2.5.</p>")
+    S.append(table(["overlap (precursor)", "shared", "1.8-only", "2.x-only", "Jaccard"],
+                   [["1.8 vs 2.5", "26,227 (92% of 1.8)", "2,344", "8,904", "0.70"],
+                    ["1.8 vs 2.6", "26,319 (92% of 1.8)", "2,252", "9,499", "0.69"],
+                    ["2.5 vs 2.6", "33,345", "1,786", "2,473", "0.89"]]))
+    S.append(img("real_overlap_18_vs_25.png", "Real PYE1 ID overlap, DIA-NN 1.8 vs 2.5 (precursor/peptide/protein)."))
+    S.append(img("real_overlap_18_vs_26.png", "Real PYE1 ID overlap, DIA-NN 1.8 vs 2.6 — same picture as 2.5."))
+    S.append('<div class="key"><b>2.x ≈ 1.8 + a large extra precursor population</b> (92% of 1.8 is '
+             'recovered by 2.x, which adds ~9k more; 1.8 keeps ~2.3k unique, so not a strict superset). '
+             '2.5 and 2.6 are nearly the same ID set (Jaccard 0.89). <b>At protein level the gap '
+             'collapses</b> — 1.8 vs 2.5 share 4,289 with balanced uniques (1.8-only 628 / 2.5-only 672). '
+             '<b>Real-vs-SIM structural difference:</b> on SIM (§5) 1.8 had 647 unique proteins vs 2.5\'s '
+             '90 — the blueprint exposed 1.8\'s protein over-reporting as largely false; on real the '
+             'protein-unique is symmetric (628 vs 672). So the <i>overlap structure</i> itself differs '
+             'real-vs-SIM, complementing the §9 low-abundance gap.</div>')
+
     # ---- caveats ----
     S.append("<h2>10. Scope &amp; caveats</h2>")
     S.append('<div class="caveat"><b>Superposition limit:</b> Stage 2 adds simulated signal '
