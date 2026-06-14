@@ -241,10 +241,13 @@ claims:
       floor (load_findings), deterministic multidimensional dilution, and a hard < 1.0
       per-pixel intensity threshold + rounding (precursor.rs/dia.rs) with no count
       sampling — so the dimmer member loses proportionally more sub-unit contributions.
-      Real-data noise is injected AFTER that threshold (assemble_frames) and cannot
-      restore the erased signal, which is why adding real-data noise did not help. A fix
-      — a per-pixel count model before the 1.0 filter, for DIA MS2 — is PROPOSED but NOT
-      YET VERIFIED (no after-fix simulation scored against this target).
+      Real-data noise is a SEPARATE background population added at its own m/z (sampled
+      real peaks / whole real frames, add_noise_from_real_data), so it lands at other
+      coordinates and cannot reconstitute the erased peptide peak — only adds nearby
+      interference (mild compression), which is why adding real-data noise mildly reduced
+      but did NOT remove the over-separation. A fix — ion-count statistics + a realistic
+      ~11 detector floor in the renderer, for DIA MS2 — is PROPOSED but NOT YET VERIFIED
+      (no after-fix simulation scored against this target).
     inputs:
       corpus: pye1-stage2-sim
       n: 4
