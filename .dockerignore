@@ -1,0 +1,13 @@
+.git
+.venv
+rustims
+evident
+tools
+results
+simulations
+data
+raw
+*.d
+*.parquet
+*.speclib
+**/__pycache__
