@@ -54,9 +54,12 @@ def score_one(label: str, report: Path, sim_dir: Path, blank_keys, q: float) -> 
     # spec req 2/3: ratio recovery is scored ONLY on observed precursors that are in the
     # TRANSMITTED blueprint (excludes false positives from the ratio oracle; singletons are
     # already dropped by build_ratio_table's both-sample requirement).
-    truth_keys = set(zip(truth.loc[truth["transmitted"], "sequence_modified"],
-                         truth.loc[truth["transmitted"], "charge"]))
-    okeys = list(zip(obs["sequence_modified"], obs["charge"]))
+    # Per-SAMPLE key (sample, seq, charge): an ion transmitted only in A must not credit a
+    # false B observation (a global seq+charge set would). Both members of an A/B pair must
+    # each be a transmitted-blueprint precursor in their own sample.
+    tt = truth[truth["transmitted"]]
+    truth_keys = set(zip(tt["sample"], tt["sequence_modified"], tt["charge"]))
+    okeys = list(zip(obs["sample"], obs["sequence_modified"], obs["charge"]))
     obs_truth = obs[[k in truth_keys for k in okeys]].copy()
 
     # --- ratio recovery (human-anchored; blueprint-intersected; both-sample only) ---
@@ -84,11 +87,17 @@ def score_one(label: str, report: Path, sim_dir: Path, blank_keys, q: float) -> 
         if level == "protein":
             sub = sub[sub["mode"] == "group-credit:any"]
         if len(sub):
-            tp, fp, fn = float(sub["TP"].sum()), float(sub["FP"].sum()), float(sub["FN"].sum())
-            fdr_recall[level] = {
-                "fdr_pct": round(100.0 * fp / (fp + tp), 3) if (fp + tp) else 0.0,
-                "recall_pct": round(100.0 * tp / (tp + fn), 3) if (tp + fn) else 0.0,
-                "TP": int(tp), "FP": int(fp), "FN": int(fn)}
+            tp, fp = float(sub["TP"].sum()), float(sub["FP"].sum())
+            fdr = round(100.0 * fp / (fp + tp), 3) if (fp + tp) else 0.0
+            if level == "protein":
+                # protein TP/FP are GROUP counts (group-credit); recall must use protein counts,
+                # not TP/(TP+FN) (FN is a truth-protein count — incompatible unit).
+                dp, ntp = float(sub["detected_proteins"].sum()), float(sub["n_truth_proteins"].sum())
+                recall = round(100.0 * dp / ntp, 3) if ntp else 0.0
+            else:
+                fn = float(sub["FN"].sum())
+                recall = round(100.0 * tp / (tp + fn), 3) if (tp + fn) else 0.0
+            fdr_recall[level] = {"fdr_pct": fdr, "recall_pct": recall, "TP": int(tp), "FP": int(fp)}
     return {"ratio_recovery": ratio, "fdr_recall": fdr_recall,
             "n_truth_precursors": int((truth["transmitted"]).sum())}
 
@@ -145,8 +154,9 @@ def main() -> int:
                        e["ratio_recovery"]["protein"]["within_tolerance"] for e in engines.values())
     metrics = {
         "schema": "plasmabench.stage1.metrics/0.1",
-        "decision_rule": f"PASS iff every engine's yeast & E.coli A/B (human-anchored, ion & "
-                         f"protein) recover nominal within {RATIO_TOL_LOG2} log2.",
+        "decision_rule": f"PASS iff every engine's yeast & E.coli A/B (human-anchored, ion AND "
+                         f"protein) recover nominal within {RATIO_TOL_LOG2} log2, each level "
+                         f"scoring >= {MIN_FEATURES} blueprint-intersected features.",
         "result": "PASS" if overall_pass else "FAIL",
         "sim_dir": str(args.sim_dir),
         "q_value_max": args.q_value_max,

@@ -56,7 +56,13 @@ def main() -> int:
         truth = pd.concat([load_truth(r, m) for r in m.runs], ignore_index=True)
         ba = blueprint_ba(truth)
         simqc = {}
-        for sp, val in ba.items():
+        # Iterate the EXPECTED species — an absent species must FAIL the gate, not be skipped.
+        for sp in NOMINAL_BA:
+            if sp not in ba:
+                simqc[sp] = {"within_5pct": False, "note": "species absent from blueprint (A or B missing)"}
+                simqc_pass = False
+                continue
+            val = ba[sp]
             rel = abs(val - NOMINAL_BA[sp]) / NOMINAL_BA[sp]
             ok = rel <= SIMQC_REL_TOL
             simqc_pass = simqc_pass and ok
