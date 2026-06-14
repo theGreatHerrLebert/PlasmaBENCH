@@ -42,9 +42,9 @@ set -f
 SETTINGS=( $(grep -vE '^\s*(#|$)' "$CFG") )
 set +f
 
-# NO_MBR=1 strips --reanalyse (match-between-runs) — control to test whether
-# low-abundance A/B ratio compression is MBR transfer vs a real detector effect.
-if [[ -n "${NO_MBR:-}" ]]; then
+# NO_MBR=1 strips --reanalyse (DIA-NN's match-between-runs / double-pass) — control
+# to test whether low-abundance A/B ratio behaviour is MBR transfer vs intrinsic.
+if [[ "${NO_MBR:-0}" == "1" ]]; then
   FILTERED=(); for s in "${SETTINGS[@]}"; do [[ "$s" == "--reanalyse" ]] || FILTERED+=("$s"); done
   SETTINGS=( "${FILTERED[@]}" )
   echo "==> NO_MBR set: --reanalyse stripped"

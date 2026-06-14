@@ -265,27 +265,37 @@ def build() -> str:
              '~27–28k IDs/run) — so the comparison is sound, not a settings artifact.</div>')
     S.append(img("real_vs_sim_compression.png",
                  "A/B ratio vs abundance octile (1=lowest…8=highest), DIA-NN 1.8, raw quant, "
-                 "human-anchored. REAL stays near nominal; SIM over-separates hard at low abundance; "
-                 "human (control) flat."))
-    S.append(table(["lowest-abundance octile (A/B)", "E. coli", "yeast"],
-                   [["REAL G PYE1", "+0.81", "−1.25"],
+                 "human-anchored. REAL is the mean of the 6 single-A-vs-single-B injection pairs "
+                 "(matched to SIM's 1-vs-1 structure). REAL stays flat across abundance; SIM "
+                 "over-separates hard at low abundance; human (control) flat."))
+    S.append(table(["lowest-abundance octile (A/B), matched 1-vs-1", "E. coli", "yeast"],
+                   [["REAL G PYE1 (mean of 6 pairs)", "+0.98  (flat)", "−1.39  (flat)"],
                     ["SIM Stage 2 (real plasma)", "+1.44", "−2.29"],
                     ["SIM Stage 1 (blank)", "+1.83", "−2.40"],
                     ["nominal", "+1.00", "−1.58"]]))
-    S.append('<div class="key"><b>The headline real-vs-SIM gap: TimSim produces spurious '
-             'low-abundance ratio <i>over-separation</i> that real data does not.</b> At the lowest '
-             'octile, real ratios sit on the 1:1 side of nominal (mild compression — textbook low-S/N), '
-             'while SIM blows <i>outward</i> (E.&nbsp;coli +1.8, yeast −2.4), converging to nominal only '
-             'at high abundance. The effect is <b>engine-independent</b> (1.8/2.5/2.6 agree — a data '
-             'property, per §8), shows on <b>both</b> blank (Stage 1) and real-plasma (Stage 2) '
-             'backgrounds, and is <b>not an MBR artifact</b>: a no-MBR control '
-             '(<code>results/diann-1.8-realG-nombr</code>; completeness correctly dropped 51%→26% '
-             'in-all-12) leaves the compression intact and slightly <i>stronger</i>, so it is intrinsic '
-             'to the real signal. Conclusion: the simulator under-models <b>detector behaviour at low '
-             'input amounts</b> — its low-count ions get spuriously extreme fold-changes instead of '
-             'regressing toward nominal. This is the one concrete, quantified, ground-truth-validated '
-             'gap in the simulation. (Reproduce: <code>scripts/plot_real_vs_sim_compression.py</code>; '
-             'real-data path = <code>loader.load_observations_real</code>.)</div>')
+    S.append('<div class="key"><b>The real-vs-SIM gap: TimSim produces a spurious abundance-dependent '
+             'ratio <i>over-separation</i> at low input that real data does not.</b> On the matched '
+             '1-vs-1 comparison (single A vs single B run, the same structure as SIM), <b>real ratios '
+             'are flat across abundance</b> (E.&nbsp;coli ≈ +0.95, yeast ≈ −1.40 at every octile — a '
+             'uniform mild global compression vs nominal, but no abundance dependence), while <b>SIM '
+             'blows outward at low abundance</b> (E.&nbsp;coli +1.4–1.8, yeast −2.3–2.4 at the lowest '
+             'octile), converging to nominal only at high abundance. Same pipeline, same 1-vs-1 '
+             'structure, opposite low-end behaviour → the over-separation is a property of the '
+             '<b>simulated signal</b>, not the analysis. Engine-independent (1.8/2.5/2.6 agree, per §8) '
+             'and present on both blank (Stage 1) and real-plasma (Stage 2) backgrounds. Most plausibly '
+             'the simulator under-models the <b>noise floor / ion statistics at low input</b> (low-count '
+             'ions get extreme fold-changes instead of regressing toward nominal) — though this analysis '
+             'establishes the <i>observed</i> over-separation, not the exact mechanism.</div>')
+    S.append('<div class="caveat"><b>What this is NOT (corrected after review):</b> an earlier version '
+             'reported real data <i>compressing</i> at low abundance. That was an artifact of averaging '
+             'all 6 real replicates per condition (<code>min_replicates=1</code>, linear-mean stabilises '
+             'low-abundance ratios); the <b>matched 1-vs-1</b> real curve above is flat. The robust claim '
+             'is the <i>SIM over-separation</i>, not real compression. Further caveats: the x-axis is '
+             'reported-abundance <i>rank</i> (octile), not a matched absolute input across datasets '
+             '(different intensity scales) — so the claim is the within-dataset shape; complete-case '
+             'selection near the detection limit can bias low-octile ratios (controlled here only by the '
+             'same-pipeline comparison); human-anchoring is a constant shift (shape-invariant). '
+             'Reproduce: <code>scripts/plot_real_vs_sim_compression.py</code>.</div>')
 
     S.append("<h3>9a. Cross-engine ID overlap on real data — 1.8 vs 2.x</h3>")
     S.append("<p>Pooled over all 12 real runs (q&lt;0.01). 2.5/2.6 identify ~23–25% more precursors "
