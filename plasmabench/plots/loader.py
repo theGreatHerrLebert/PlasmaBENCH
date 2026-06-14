@@ -294,9 +294,17 @@ def load_observations_real(report_path: str | Path, sample_of=sample_from_slot,
         df = df[df["Decoy"] == 0]
 
     df["sample"] = df["Run"].map(sample_of)
-    n_drop = int(df["sample"].isna().sum())
-    if n_drop:
+    unmatched = sorted(df.loc[df["sample"].isna(), "Run"].unique())
+    if unmatched:
         df = df[df["sample"].notna()]
+        warnings.warn(
+            f"load_observations_real: {len(unmatched)} run(s) unmatched by sample_of and "
+            f"DROPPED: {unmatched}. Check the A/B map covers exactly the intended cohort.",
+            RuntimeWarning, stacklevel=2)
+    counts = df.groupby("sample")["Run"].nunique().to_dict()
+    if set(counts) != {"A", "B"}:
+        warnings.warn(f"load_observations_real: expected samples A and B, got {counts}",
+                      RuntimeWarning, stacklevel=2)
     df["experiment"] = experiment
     df["run_id"] = df["Run"]
     df["software"] = software
