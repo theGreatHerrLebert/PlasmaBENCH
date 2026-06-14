@@ -35,6 +35,7 @@ import numpy as np
 DEFAULT_REPORTS = ["1.8:results/diann-1.8-AB-v3/report.tsv",
                    "2.5:results/diann-2.5-AB-v3/report.parquet"]
 RATIO_TOL_LOG2 = 0.4   # |observed - expected| A/B tolerance (imposed seeds, slight compression)
+MIN_FEATURES = 500     # PASS requires a non-trivial scored set per level (spec: no tiny-set pass)
 CAVEATS = [
     "Cross-engine: seeding from DIA-NN enriches truth for DIA-NN-findable peptides; read "
     "cross-engine DIFFERENCES, not absolute self-recall (spec req 4).",
@@ -50,26 +51,32 @@ def score_one(label: str, report: Path, sim_dir: Path, blank_keys, q: float) -> 
     truth = pd.concat([load_truth(r, manifest) for r in manifest.runs], ignore_index=True)
     obs = load_observations(report, manifest)
 
-    # --- ratio recovery (human-anchored; both-sample features only = singletons excluded) ---
+    # spec req 2/3: ratio recovery is scored ONLY on observed precursors that are in the
+    # TRANSMITTED blueprint (excludes false positives from the ratio oracle; singletons are
+    # already dropped by build_ratio_table's both-sample requirement).
+    truth_keys = set(zip(truth.loc[truth["transmitted"], "sequence_modified"],
+                         truth.loc[truth["transmitted"], "charge"]))
+    okeys = list(zip(obs["sequence_modified"], obs["charge"]))
+    obs_truth = obs[[k in truth_keys for k in okeys]].copy()
+
+    # --- ratio recovery (human-anchored; blueprint-intersected; both-sample only) ---
     ratio = {}
     for level, pq in (("ion", "maxlfq"), ("protein", "raw_sum")):
-        wide, anchor = R.build_ratio_table(obs, level=level, q_value_max=q,
+        wide, anchor = R.build_ratio_table(obs_truth, level=level, q_value_max=q,
                                            human_anchor=True, protein_quant=pq)
         summ = R.ratio_summary(wide, R.A_OVER_B).set_index("species")
-        per_sp = {}
-        worst = 0.0
+        per_sp = {}; worst = 0.0
         for sp in ("YEAST", "ECOLI"):
             obs_l2 = float(summ.loc[sp, "observed_log2"]); exp_l2 = float(summ.loc[sp, "expected_log2"])
-            err = abs(obs_l2 - exp_l2)
-            worst = max(worst, err)
+            err = abs(obs_l2 - exp_l2); worst = max(worst, err)
             per_sp[sp] = {"observed_log2_AB": round(obs_l2, 3),
-                          "expected_log2_AB": round(exp_l2, 3),
-                          "abs_error_log2": round(err, 3)}
+                          "expected_log2_AB": round(exp_l2, 3), "abs_error_log2": round(err, 3)}
         ratio[level] = {"n_features": int(len(wide)), "human_anchor_log2": round(float(anchor), 3),
                         "species": per_sp, "worst_abs_error_log2": round(worst, 3),
-                        "within_tolerance": bool(worst <= RATIO_TOL_LOG2)}
+                        "within_tolerance": bool(worst <= RATIO_TOL_LOG2 and len(wide) >= MIN_FEATURES)}
 
-    # --- empirical FDR / recall vs blueprint (blank-subtracted) ---
+    # --- empirical FDR / recall vs blueprint (blank-subtracted); POOL TP/FP/FN across
+    #     samples (one confusion matrix), not a macro-average of per-sample percentages ---
     sc = score_fdr(truth, obs, q_value_max=q, blank_keys=blank_keys)
     fdr_recall = {}
     for level in ("ion", "peptide", "protein"):
@@ -77,8 +84,11 @@ def score_one(label: str, report: Path, sim_dir: Path, blank_keys, q: float) -> 
         if level == "protein":
             sub = sub[sub["mode"] == "group-credit:any"]
         if len(sub):
-            fdr_recall[level] = {"fdr_pct": round(float(sub["fdr_pct"].mean()), 3),
-                                 "recall_pct": round(float(sub["tpr_pct"].mean()), 3)}
+            tp, fp, fn = float(sub["TP"].sum()), float(sub["FP"].sum()), float(sub["FN"].sum())
+            fdr_recall[level] = {
+                "fdr_pct": round(100.0 * fp / (fp + tp), 3) if (fp + tp) else 0.0,
+                "recall_pct": round(100.0 * tp / (tp + fn), 3) if (tp + fn) else 0.0,
+                "TP": int(tp), "FP": int(fp), "FN": int(fn)}
     return {"ratio_recovery": ratio, "fdr_recall": fdr_recall,
             "n_truth_precursors": int((truth["transmitted"]).sum())}
 
@@ -103,6 +113,9 @@ def main() -> int:
     blank_keys = None
     if args.blank_report.exists():
         blank_keys = blank_keysets(args.blank_report, q_value_max=args.q_value_max)
+    else:
+        print(f"WARNING: blank report {args.blank_report} not found — FDR is NOT blank-subtracted "
+              f"(blank-leaked IDs may inflate it). Pass --blank-report to subtract.", file=sys.stderr)
 
     engines = {}
     for spec in reports:
@@ -110,13 +123,23 @@ def main() -> int:
         print(f"scoring DIA-NN {label} ...", file=sys.stderr)
         engines[label] = score_one(label, Path(path), args.sim_dir, blank_keys, args.q_value_max)
 
-    # cross-engine ratio-recovery deltas (the unbiased read; spec req 4)
+    # cross-engine DELTAS — the unbiased read (spec req 4): absolute self-recall is biased by
+    # seeding circularity, so report engine-to-engine differences, not absolutes.
     labels = list(engines)
     cross = {}
     if len(labels) == 2:
         a, b = labels
-        cross = {"engines": labels, "ratio_ion_worst_abs_error_log2": {
-            la: engines[la]["ratio_recovery"]["ion"]["worst_abs_error_log2"] for la in labels}}
+        def delta(path_fn):
+            return round(path_fn(engines[a]) - path_fn(engines[b]), 3)
+        cross = {
+            "engines": [a, b],
+            "ratio_ion_worst_abs_error_log2_delta": delta(
+                lambda e: e["ratio_recovery"]["ion"]["worst_abs_error_log2"]),
+            "ion_fdr_pct_delta": delta(lambda e: e["fdr_recall"].get("ion", {}).get("fdr_pct", 0.0)),
+            "ion_recall_pct_delta": delta(lambda e: e["fdr_recall"].get("ion", {}).get("recall_pct", 0.0)),
+            "protein_fdr_pct_delta": delta(lambda e: e["fdr_recall"].get("protein", {}).get("fdr_pct", 0.0)),
+            "note": f"deltas = {a} minus {b}; read differences, not absolute self-recall.",
+        }
 
     overall_pass = all(e["ratio_recovery"]["ion"]["within_tolerance"] and
                        e["ratio_recovery"]["protein"]["within_tolerance"] for e in engines.values())

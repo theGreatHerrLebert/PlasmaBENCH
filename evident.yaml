@@ -111,8 +111,8 @@ claims:
       oracle:
         - timsim-blueprint
         - pye1-nominal-ratios
-      command: python scripts/plot_stage1_ratios.py --report <stage2 report> --protein-quant raw_sum
-      artifact: results/figures/stage2fix_18_ratios_protein.png
+      command: make stage2-eval
+      artifact: results/stage2/metrics.json
     assumptions:
       - The native findings_reference_median (interim per-sample intensity_multiplier) cancels the per-sample-median distortion; sim-QC blueprint A/B ≈ nominal is the gate.
       - Superimposing simulated signal onto a real .d does not reproduce ion suppression / fill-time / detector saturation — it tests the dense-background + DIA-NN-processing contribution only.
@@ -161,7 +161,7 @@ claims:
         - diann-1.8
         - diann-2.5
         - diann-2.6
-      command: python scripts/diag_quant_method.py --report <report>
+      command: make quant-eval
       artifact: results/figures/quant_18v25_normalization.png
     assumptions:
       - The unified diann-pye1.cfg differs across versions only in the binary, so a 1.8/2.5/2.6 difference at fixed raw quantity is an engine property.
@@ -210,7 +210,7 @@ claims:
         - real-g-pye1
         - pye1-nominal-ratios
         - diann-1.8
-      command: python scripts/plot_real_vs_sim_compression.py
+      command: make real-vs-sim-eval
       artifact: results/figures/real_vs_sim_compression.png
     assumptions:
       - Real and SIM must be compared at matched replicate structure (1-vs-1); averaging the 6 real replicates manufactures apparent low-abundance compression (a confound corrected after Codex review).
@@ -259,10 +259,53 @@ claims:
       oracle:
         - timsim-blueprint
         - rustims-renderer
-      command: python scripts/plot_lowabund_underquant.py
+      command: make lowinput-eval
       artifact: results/figures/sim_lowabund_underquant.png
     assumptions:
       - The diagnosis localises the cause to TimSim rendering + DIA-NN quant of low-count synthetic peaks; it does not separate rendering from quant beyond what truth-vs-observed shows.
     failure_modes:
       - ABSENT (looked for, not yet produced) — after-fix evidence is an after-fix SIM re-run scored against the same per-member-recovery target. Until it exists, the fix is proposed, not validated.
       - The fix must land in the Rust renderer before the 1.0 filter; adding events in load_findings would corrupt blueprint truth, and a constant on the EMG abundance is renormalized away.
+
+  - id: plasmabench-ideoverlap-real
+    title: On real data 2.x is ~1.8 plus a large extra precursor population (not a strict superset)
+    subsystem: real-vs-sim
+    case: docs/claims-audit.md
+    source: plasmabench/plots
+    tier: research
+    trust_strategy:
+      - validation
+    pattern: evident/patterns/README.md#cross-tool-agreement
+    # as_stated: report §5 (SIM) / §9b (real)
+    claim: >
+      Pooled over the 12 real G PYE1 runs at q<0.01, DIA-NN 2.5/2.6 identify ~23–25%
+      more precursors than 1.8 (≈35k vs 28.5k); the overlap is asymmetric — ~92% of
+      1.8's precursors are recovered by 2.x which adds ~9k more, but 1.8 retains ~2.3k
+      unique (not a strict superset). 2.5 and 2.6 are nearly the same ID set (Jaccard
+      0.89). At protein level the gap collapses (1.8-only 628 vs 2.5-only 672). On SIM
+      (§5) the blueprint additionally exposes 1.8's protein over-reporting (647 unique
+      vs 2.5's 90) as largely false — a real-vs-SIM structural difference, since on real
+      the protein-unique is symmetric.
+    inputs:
+      corpus: g-pye1-real
+      n: 12
+      class: experimental
+    pinned_versions:
+      plasmabench: "3b2acdd"
+      real-g-pye1: "G250506"
+      diann-1.8: "1.8.1"
+      diann-2.5: "2.5.0"
+    tolerances:
+      - prose: Set-overlap counts (shared / per-engine unique / Jaccard) at precursor, peptide and protein level; cross-engine differences are the read, absolute self-recall is biased by seeding circularity.
+    evidence:
+      oracle:
+        - real-g-pye1
+        - diann-1.8
+        - diann-2.5
+      command: make idoverlap-eval
+      artifact: results/figures/real_overlap_18_vs_25.png
+    assumptions:
+      - q<0.01 ID sets pooled across all 12 runs; protein "unique" on real data is not truth-labellable (no blueprint), so falseness is only inferable on SIM.
+    failure_modes:
+      - Seeding from a DIA-NN report enriches truth for DIA-NN-findable peptides; read cross-engine differences, not absolute counts.
+      - Pooling masks per-run completeness differences; the overlap is an ID-set statement, not a per-run quant statement.
