@@ -72,7 +72,26 @@ venv:
 # results/ and simulations/) are provided EXTERNALLY (mounted), not baked into the image.
 # Override inputs with PLB_DATA / PLB_OUT or scripts/stage1_eval.py --report/--sim-dir.
 stage1-eval:
-	. .venv/bin/activate && python scripts/stage1_eval.py
+	@PY=$$([ -x .venv/bin/python ] && echo .venv/bin/python || echo python); \
+	echo "stage1-eval: $$PY"; "$$PY" scripts/stage1_eval.py
+
+# --- Analysis-replay image (EVIDENT replay surface; code pinned, raw data external) ---
+# Default = the CI-published image (.github/workflows/analysis-image.yml). Build locally
+# instead with `make analysis-image ANALYSIS_IMAGE=plasmabench-analysis:local`
+# (note: a snap-confined docker cannot read build contexts/mounts outside $HOME).
+ANALYSIS_IMAGE ?= ghcr.io/thegreatherrlebert/plasmabench-analysis:latest
+analysis-image:
+	docker build -f docker/analysis.Dockerfile -t $(ANALYSIS_IMAGE) .
+
+# Replay stage1-eval INSIDE the container with the raw data mounted externally
+# (results/ simulations/ data/ — gitignored, provided by you). Override roots with
+# PLB_OUT (simulations) / PLB_DATA (data); results stays the repo's results/.
+stage1-eval-docker:
+	docker run --rm \
+	  -v $(CURDIR)/results:/work/results \
+	  -v $${PLB_OUT:-$(CURDIR)/simulations}:/work/simulations \
+	  -v $${PLB_DATA:-$(CURDIR)/data}:/work/data \
+	  $(ANALYSIS_IMAGE) make stage1-eval
 
 submodules:
 	git submodule update --init --recursive
