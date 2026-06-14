@@ -50,12 +50,16 @@ searched with the identical config (only the binary differs across DIA-NN 1.8/2.
 2. **Deterministic multidimensional dilution**: events are split across frame × scan × charge ×
    isotope/fragment as `frame_abundance * scan_abundance * ion_abundance * total_events`
    (`precursor.rs:125/133`, `dia.rs:531/568`) — no Poisson/binomial count draw.
-3. **Hard `< 1.0` per-pixel threshold + rounding + uint32**: individual MS1/MS2 centroid
-   contributions below 1.0 are **discarded** (`precursor.rs:165`, `dia.rs:504/673/731`),
-   survivors rounded (`dia.rs:321/400`) and cast to uint32 (`tdf.py:238`).
+3. **Hard intensity floor of 1.0 + rounding + uint32**: per-pixel contributions below an
+   intensity of `1.0` are **discarded** (`filter_ranged(…, 1.0, 1e9, …)` `precursor.rs:166`;
+   `intensity_min.unwrap_or(1.0)` `dia.rs:504/772`), survivors rounded (`dia.rs:321/400`) and
+   cast to uint32 (`tdf.py:238`). Note this is an **intensity** floor in the simulator's own
+   units — *not* an ion count (there is no fractional ion), and it sits **far below the real
+   timsTOF detector minimum (~11)**, so it is both the wrong unit and the wrong magnitude.
 
-The dimmer member of each A/B pair has more of its per-pixel contributions fall below 1.0 →
-preferentially erased → under-quantified. This is the primary, deterministic cause.
+The dimmer member of each A/B pair has more of its per-pixel contributions fall below the 1.0
+floor → preferentially erased → under-quantified. This is the primary, deterministic cause: the
+signal is diluted across pixels and clipped, with no ion-count statistics to govern it.
 
 **Why the existing noise mechanisms don't fix it (incl. real-data noise — observed):**
 - `add_uniform_noise` is `abundance + abundance*noise` *renormalized to preserve total*
@@ -68,10 +72,13 @@ preferentially erased → under-quantified. This is the primary, deterministic c
   (mild compression), which is why adding real-data noise did **not** remove the over-separation.
 
 ## Proposed fix
-Replace the deterministic fractional intensities with a **count model in the Rust renderer,
-immediately before the `1.0` filtering/rounding boundary** (`precursor.rs` / `dia.rs`): e.g.
-Poisson sampling from expected per-pixel counts, plus a detector/background count term *before*
-thresholding. It must cover **DIA MS2** (where DIA-NN quantifies), and ideally MS1 consistently.
+Model the **real timsTOF detector** instead of the deterministic per-pixel clip: (a) use
+integer ion-count statistics (e.g. Poisson sampling from expected per-pixel counts) rather than
+deterministic fractional intensities, and (b) apply a **realistic minimum-intensity floor at the
+true detector level (~11), not 1.0**, in the Rust renderer immediately before the filtering/
+rounding boundary (`precursor.rs` / `dia.rs`). It must cover **DIA MS2** (where DIA-NN
+quantifies), and ideally MS1 consistently. The current 1.0 floor is both the wrong unit (an
+intensity, not an ion count) and far below the real ~11 minimum.
 Do NOT add events in `load_findings` (that changes blueprint truth and imposes compression) or a
 constant to the EMG abundance (renormalized → adds no counts). A realistic additive low-count
 floor is one candidate term within this count model, but the deterministic `< 1.0` truncation is
