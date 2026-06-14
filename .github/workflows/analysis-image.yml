@@ -59,4 +59,4 @@ jobs:
             org.opencontainers.image.title=PlasmaBENCH analysis replay
 
       - name: Echo digest
-        run: echo "analysis image digest: ${{ steps.build.outputs.digest }}"
+        run: echo "analysis image digest ${{ steps.build.outputs.digest }}"
