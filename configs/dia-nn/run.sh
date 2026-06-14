@@ -42,6 +42,14 @@ set -f
 SETTINGS=( $(grep -vE '^\s*(#|$)' "$CFG") )
 set +f
 
+# NO_MBR=1 strips --reanalyse (match-between-runs) — control to test whether
+# low-abundance A/B ratio compression is MBR transfer vs a real detector effect.
+if [[ -n "${NO_MBR:-}" ]]; then
+  FILTERED=(); for s in "${SETTINGS[@]}"; do [[ "$s" == "--reanalyse" ]] || FILTERED+=("$s"); done
+  SETTINGS=( "${FILTERED[@]}" )
+  echo "==> NO_MBR set: --reanalyse stripped"
+fi
+
 THREADS="${THREADS:-$(nproc)}"
 mkdir -p "$OUT_DIR"
 
