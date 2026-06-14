@@ -65,11 +65,15 @@ signal is diluted across pixels and clipped, with no ion-count statistics to gov
 - `add_uniform_noise` is `abundance + abundance*noise` *renormalized to preserve total*
   (`utility.py:56`) — multiplicative chromatographic-shape jitter, NOT an additive floor; creates
   no signal where abundance is 0; defaults off.
-- Reference-noise / real-data superimpose is genuinely additive **but injected only AFTER the
-  synthetic `< 1.0` filtering + rounding** (`assemble_frames.py:132/143`,
-  `add_noise_from_real_data.py:110/128`). So it cannot restore already-discarded synthetic
-  contributions; it merely adds nearby interfering peaks → DIA-NN reports a *less* extreme ratio
-  (mild compression), which is why adding real-data noise did **not** remove the over-separation.
+- Reference-noise / real-data superimpose is genuinely additive, but it is a **separate background
+  population added at its OWN m/z** — the noise step samples unrelated peaks from real frames and
+  the superimpose adds whole real frames (`add_noise_from_real_data.py:110/128`). It therefore does
+  not add intensity at the erased peptide's specific (m/z, RT, IM) coordinate, so it cannot
+  reconstitute that peak's clipped quantity — regardless of ordering (additive signal is not
+  order-dependent; the fact that it runs after the `<1.0` filter at `assemble_frames.py:132/143` is
+  incidental). It only adds nearby interference that DIA-NN may partly integrate → a *less* extreme
+  ratio (mild compression), which is why adding real-data noise **mildly reduced but did not remove**
+  the over-separation (Stage-2 over-separates less than blank Stage-1).
 
 ## Proposed fix
 Model the **real timsTOF detector** instead of the deterministic per-pixel clip: (a) use

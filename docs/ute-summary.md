@@ -26,9 +26,11 @@ The smaller partner of each A/B pair is under-measured at low signal because the
 spreads each peptide's signal across many pixels and clips them at an intensity floor of **1**
 in its own arbitrary units — far below the real timsTOF detector minimum (~11) — and builds the
 peaks deterministically **without real ion-count statistics**, so a faint peptide's thinly-spread
-signal is erased; the real-data noise we add comes too late in the pipeline to compensate.
-The fix is to model the real detector (a realistic intensity floor + ion-count statistics)
-instead of the deterministic clip. *(plasmabench-lowinput-overseparation — proposed, not yet built)*
+signal is erased; the real-data noise we add can't recover it because it is *separate background
+sampled at its own m/z* (it lands elsewhere, not on the erased peptide's peak — only adding nearby
+interference that mildly compresses). The fix is to model the real detector (a realistic intensity
+floor + ion-count statistics) instead of the deterministic clip.
+*(plasmabench-lowinput-overseparation — proposed, not yet built)*
 
 ### 4. DIA-NN 2.6 behaves essentially like 2.5 on quantification.
 2.6 did **not** change the quant behaviour relative to 2.5 — both are more sensitive than 1.8,
