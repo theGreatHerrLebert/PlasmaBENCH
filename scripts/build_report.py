@@ -310,12 +310,13 @@ def build() -> str:
                  "Per-member quant recovery vs true abundance, SIM Stage 2. The big peak is accurate "
                  "everywhere; the small peak is under-quantified at low abundance; the shaded gap = the "
                  "over-separation."))
-    S.append('<div class="key"><b>Mechanism, pinned:</b> the <i>higher</i>-intensity member of each '
-             'pair is recovered accurately at all abundances, while the <i>lower</i> member is '
-             'under-quantified at low abundance (~0.4 E.&nbsp;coli / ~0.6 yeast log2 in the bottom octile). '
-             'The higher−lower gap <b>equals</b> the over-separation to the decimal — it fully accounts '
-             'for it — and is member-symmetric (holds where A is the big side and where B is), so it is '
-             'about small-vs-big peak, not A/B or species. <b>Candidate code-level cause</b> (from '
+    S.append('<div class="key"><b>Where the loss sits (measured):</b> the <i>higher</i>-intensity '
+             'member of each pair is recovered accurately at all abundances, while the <i>lower</i> '
+             'member is under-quantified at low abundance (~0.4 E.&nbsp;coli / ~0.6 yeast log2 in the '
+             'bottom octile). The higher−lower recovery gap <b>equals</b> the observed over-separation '
+             '(it is that under-quantification, member-resolved) and is member-symmetric (holds where A '
+             'is the big side and where B is), so it is about small-vs-big peak, not A/B or species. '
+             '<b>Candidate code-level cause</b> (from '
              'reading the rustims rendering path; Codex-reviewed): per-peak intensity is ∝ '
              '<code>total_events</code>, so a fainter peptide\'s contributions all scale down and more '
              'cross below a fixed <code>1.0</code> threshold — and for DIA MS2 that threshold is applied '
