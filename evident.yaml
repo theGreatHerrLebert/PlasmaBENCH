@@ -53,7 +53,10 @@ claims:
       timsim-blueprint: "rustims-2748248"
       pye1-nominal-ratios: "PYE1-v1"
     tolerances:
-      - prose: Per-metric tolerances declared at release time (analysis/stage1/tolerances.toml); ratio panels human-anchored, ambiguous-species excluded.
+      - metric: absolute_error
+        op: "<="
+        value: 0.4
+        prose: Decision rule (scripts/stage1_eval.py) — every engine's yeast & E.coli A/B (human-anchored, ion AND protein level) recovers nominal within 0.4 log2; ratios use both-sample features only (singletons excluded). FDR/recall reported as cross-engine differences, not absolute pass/fail.
     evidence:
       oracle:
         - timsim-blueprint

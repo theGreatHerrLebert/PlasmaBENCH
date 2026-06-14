@@ -64,13 +64,15 @@ venv:
 	. .venv/bin/activate && pip install --upgrade pip && pip install -r requirements-dev.txt
 	@echo "Venv created at .venv (dev tools only). See docs/venv-setup.md to build timsim from source."
 
-# Evaluation entrypoint declared in evident.yaml. The actual eval pipeline
-# (species-resolved ratio recovery, FDR, recall against the TimSim blueprint)
-# is not implemented yet — this stub fails loudly so the manifest's
-# reproducible command does not pretend to work.
+# Evaluation entrypoint declared in evident.yaml (the EVIDENT replay command for the
+# plasmabench-stage1-simulated-truth claim). Scores each DIA-NN report against the
+# TimSim blueprint → species-resolved ratio recovery + empirical FDR/recall, writing
+# results/stage1/metrics.json. Pure-python (pandas + plasmabench/plots), so it runs in
+# the analysis image; the raw inputs (gitignored DIA-NN reports + SIM blueprints under
+# results/ and simulations/) are provided EXTERNALLY (mounted), not baked into the image.
+# Override inputs with PLB_DATA / PLB_OUT or scripts/stage1_eval.py --report/--sim-dir.
 stage1-eval:
-	@echo "stage1-eval is not implemented yet. Tracking issue: TODO.md (Stage 1)." >&2
-	@exit 64
+	. .venv/bin/activate && python scripts/stage1_eval.py
 
 submodules:
 	git submodule update --init --recursive
