@@ -4,6 +4,8 @@ Benchmark suite for comparing DIA software on TimsTOF **mixed-proteome plasma** 
 
 The name nods to LFQbench / HYE — same three-species ratio idea, applied to a human-plasma background with yeast and *E. coli* spike-in.
 
+> **Reproducing this?** See **[`REPRODUCE.md`](REPRODUCE.md)** for the step-by-step guide. The data (~44 GB: simulated `.d`s, blueprints, DIA-NN reports) lives on Zenodo — DOI [`10.5281/zenodo.20733913`](https://doi.org/10.5281/zenodo.20733913). You bring your own DIA-NN / FragPipe.
+
 ## Goal
 
 Reproduce, *in silico*, the mixed-proteome plasma benchmark of Ute Distler and colleagues (*Nat Commun* 2025, DOI [10.1038/s41467-025-64501-z](https://doi.org/10.1038/s41467-025-64501-z)) on the TimsTOF, so that DIA pipelines can be scored where the truth — which peptides are present, from which organism, at what ratio between samples — is exactly known. Because TimSim emits a blueprint alongside every simulated `.d`, we can quantify species-resolved FDR, recall, and quantification (ratio-recovery) accuracy.
