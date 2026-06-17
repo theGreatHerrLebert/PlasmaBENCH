@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "upload_type": "dataset",
+    "title": "PlasmaBENCH: TimSim synthetic ground-truth data for benchmarking DIA software on TimsTOF mixed-proteome plasma (PYE1)",
+    "description": "<p>Data archive for <strong>PlasmaBENCH</strong>, a benchmark of DIA software (DIA-NN, FragPipe) on TimsTOF mixed-proteome plasma data using TimSim-generated synthetic ground truth. The PYE1 design (Plasma &middot; Yeast &middot; <em>E. coli</em>) is a three-species ratio test: human plasma background 1:1 between Sample A and B, while yeast (expected B/A = 3.0) and <em>E. coli</em> (expected B/A = 0.5) move in opposite directions. TimSim emits an exact per-precursor blueprint alongside every simulated <code>.d</code>, so species-resolved recall, FDR, and ratio recovery can be scored against known truth.</p><p><strong>Contents</strong> (three tarballs that unpack into the PlasmaBENCH repo root):</p><ul><li><code>plasmabench-data-raw.tar.zst</code> &rarr; <code>data/raw/</code>: search FASTA, the blank <code>.d</code> (noise source), the real G PYE1 <code>.d</code>s, FragPipe DDA inputs.</li><li><code>plasmabench-simulations.tar.zst</code> &rarr; <code>simulations/</code>: simulated Sample A/B <code>.d</code>s, the <code>synthetic_data.db</code> TimSim blueprint (ground truth), seeds, rendered configs.</li><li><code>plasmabench-results.tar.zst</code> &rarr; <code>results/</code>: our DIA-NN 1.8 / 2.5 / 2.6 reports. <strong>Predicted spectral libraries (<code>*.predicted.speclib</code>, ~20 GB) are deliberately excluded.</strong></li></ul><p><strong>Bring your own search engines.</strong> DIA-NN and FragPipe binaries are NOT included (they have their own licenses); install your own to reproduce. Step-by-step reproduction instructions are in <code>REPRODUCE.md</code> in the code repository.</p><p>Code: https://github.com/theGreatHerrLebert/PlasmaBENCH &mdash; Simulator: TimSim (rustims). PlasmaBENCH reproduces in silico the mixed-proteome plasma benchmark of Distler et al., Nat Commun 2025 (DOI 10.1038/s41467-025-64501-z; data PXD056598).</p>",
+    "access_right": "open",
+    "license": "cc-by-4.0",
+    "creators": [
+      {
+        "name": "Teschner, David",
+        "affiliation": "FILL_ME (affiliation)",
+        "orcid": "FILL_ME (orcid, or remove this line)"
+      },
+      {
+        "name": "Distler, Ute",
+        "affiliation": "FILL_ME (affiliation) — original PYE1 experimental data",
+        "orcid": "FILL_ME (orcid, or remove this line)"
+      }
+    ],
+    "keywords": [
+      "proteomics",
+      "DIA",
+      "data-independent acquisition",
+      "TimsTOF",
+      "DIA-NN",
+      "FragPipe",
+      "benchmark",
+      "synthetic data",
+      "TimSim",
+      "plasma proteomics",
+      "PYE1",
+      "ground truth"
+    ],
+    "related_identifiers": [
+      {
+        "relation": "isSupplementTo",
+        "identifier": "https://github.com/theGreatHerrLebert/PlasmaBENCH",
+        "resource_type": "software"
+      },
+      {
+        "relation": "isDerivedFrom",
+        "identifier": "10.1038/s41467-025-64501-z",
+        "resource_type": "publication-article"
+      },
+      {
+        "relation": "isDerivedFrom",
+        "identifier": "PXD056598",
+        "resource_type": "dataset"
+      },
+      {
+        "relation": "references",
+        "identifier": "https://github.com/theGreatHerrLebert/rustims",
+        "resource_type": "software"
+      }
+    ],
+    "notes": "Predicted spectral libraries (*.predicted.speclib) and search-engine binaries are intentionally excluded. Reproduce by installing your own DIA-NN / FragPipe and following REPRODUCE.md. FILL_ME items in creators must be completed before publishing."
+  }
+}

@@ -36,3 +36,8 @@ docker/.env
 
 # DIA-NN / external tool binaries (downloaded via scripts/get_diann.sh)
 /tools/
+
+# Zenodo packaging / download scratch
+/_zenodo_pkg/
+/_zenodo_dl/
+.zenodo_token
